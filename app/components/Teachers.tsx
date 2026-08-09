@@ -58,11 +58,11 @@ export default function Teachers() {
           {teachers.map((teacher, index) => (
             <div
               key={index}
-              className="group overflow-hidden rounded-[28px] border border-gray-200 bg-white p-4 shadow-md transition-all duration-300 hover:-translate-y-2 hover:border-green-200 hover:shadow-2xl"
+              className="group overflow-hidden rounded-[40px] border border-gray-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-green-200"
             >
 
-              {/* Image Area */}
-              <div className="relative h-72 w-full overflow-hidden rounded-[22px] bg-gray-100">
+              {/* Teacher Image */}
+              <div className="relative h-72 w-full overflow-hidden rounded-[30px] bg-gray-100">
 
                 <Image
                   src={teacher.image}
