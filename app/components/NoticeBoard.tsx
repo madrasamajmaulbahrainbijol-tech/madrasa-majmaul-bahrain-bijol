@@ -19,84 +19,108 @@ export default function NoticeBoard() {
   ];
 
   return (
-    <section
-      id="notice"
-      className="bg-white py-24 px-6 md:px-10 lg:px-20"
-    >
-      <div className="max-w-7xl mx-auto">
+    <section id="notices" className="bg-white py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-10">
 
         {/* Heading */}
-
         <div className="text-center">
-
-          <p className="text-green-600 font-bold uppercase tracking-[4px]">
+          <p className="font-bold uppercase tracking-[4px] text-green-600">
             Latest Updates
           </p>
 
-          <h2 className="mt-4 text-4xl md:text-5xl font-extrabold text-gray-900">
+          <h2 className="mt-4 text-4xl font-extrabold text-gray-900 md:text-5xl">
             Notice Board
           </h2>
 
           <div className="mx-auto mt-5 h-1 w-24 rounded-full bg-green-600"></div>
 
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-gray-600 md:text-lg">
+            Stay updated with the latest admissions, meetings, examinations,
+            programmes and important announcements.
+          </p>
         </div>
 
-        <div className="mt-16 grid gap-10 lg:grid-cols-2">
+        {/* Notice Content */}
+        <div className="mt-16 grid gap-8 lg:grid-cols-2">
 
           {/* Latest Notices */}
+          <div className="overflow-hidden rounded-[30px] bg-green-700 p-6 text-white md:p-8">
 
-          <div className="rounded-3xl bg-green-700 p-8 text-white shadow-xl">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-2xl font-extrabold md:text-3xl">
+                Latest Notices
+              </h3>
 
-            <h3 className="text-3xl font-bold">
-              Latest Notices
-            </h3>
+              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
+                2026-27
+              </span>
+            </div>
 
-            <div className="mt-8 space-y-5">
+            <div className="mt-8 space-y-4">
 
               {notices.map((notice, index) => (
-
                 <div
                   key={index}
-                  className="rounded-xl bg-white/10 p-5 backdrop-blur"
+                  className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm transition duration-300 hover:bg-white/15"
                 >
+                  <div className="flex items-start gap-4">
 
-                  <h4 className="font-semibold text-lg">
-                    {notice.title}
-                  </h4>
+                    {/* Number */}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white font-bold text-green-700">
+                      {index + 1}
+                    </div>
 
-                  <p className="mt-2 text-green-200">
-                    {notice.date}
-                  </p>
+                    <div className="min-w-0">
+                      <h4 className="text-base font-bold leading-7 md:text-lg">
+                        {notice.title}
+                      </h4>
 
+                      <p className="mt-1 text-sm font-medium text-green-200">
+                        {notice.date}
+                      </p>
+                    </div>
+
+                  </div>
                 </div>
-
               ))}
 
             </div>
-
           </div>
 
-          {/* Announcement */}
+          {/* Important Announcement */}
+          <div className="rounded-[30px] border border-gray-200 bg-gray-50 p-6 md:p-8">
 
-          <div className="rounded-3xl border border-gray-200 bg-gray-50 p-8 shadow-xl">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-2xl">
+              📢
+            </div>
 
-            <h3 className="text-3xl font-bold text-gray-900">
+            <h3 className="mt-6 text-2xl font-extrabold text-gray-900 md:text-3xl">
               Important Announcement
             </h3>
 
-            <p className="mt-6 text-lg leading-9 text-gray-600">
+            <div className="mt-4 h-1 w-14 rounded-full bg-green-600"></div>
+
+            <p className="mt-6 text-base leading-8 text-gray-600 md:text-lg">
               Welcome to the official website of Madrasa Majmaul Bahrain
-              Bijol. All admission updates, examination schedules,
-              holidays, events and important announcements will be
-              published here.
+              Bijol. All admission updates, examination schedules, holidays,
+              events and important announcements will be published here.
             </p>
 
-            <button className="mt-10 rounded-xl bg-green-600 px-8 py-4 text-white font-bold hover:bg-green-700 transition">
+            <div className="mt-8 rounded-2xl border border-green-100 bg-white p-5">
+              <p className="font-semibold leading-7 text-gray-800">
+                Please check this section regularly for the latest updates
+                from the madrasa administration.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="mt-8 rounded-xl bg-green-600 px-7 py-3.5 font-bold text-white transition duration-300 hover:bg-green-700"
+            >
               View All Notices
             </button>
 
           </div>
-
         </div>
 
       </div>
