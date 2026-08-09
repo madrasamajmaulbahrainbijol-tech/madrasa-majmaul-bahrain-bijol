@@ -57,7 +57,7 @@ export default function About() {
 
               <div className="rounded-2xl bg-green-50 p-6">
                 <h4 className="text-4xl font-extrabold text-green-600">
-                  500+
+                  60+
                 </h4>
                 <p className="mt-2 text-gray-700">
                   Students
@@ -66,7 +66,7 @@ export default function About() {
 
               <div className="rounded-2xl bg-green-50 p-6">
                 <h4 className="text-4xl font-extrabold text-green-600">
-                  25+
+                  4+
                 </h4>
                 <p className="mt-2 text-gray-700">
                   Teachers
@@ -75,7 +75,7 @@ export default function About() {
 
               <div className="rounded-2xl bg-green-50 p-6">
                 <h4 className="text-4xl font-extrabold text-green-600">
-                  15+
+                  1.5+
                 </h4>
                 <p className="mt-2 text-gray-700">
                   Years Experience
