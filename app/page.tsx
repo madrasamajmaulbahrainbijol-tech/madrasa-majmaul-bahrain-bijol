@@ -1,5 +1,6 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
+import NoticeBoard from "./components/NoticeBoard";
 import About from "./components/About";
 import Courses from "./components/Courses";
 import WhyChooseUs from "./components/WhyChooseUs";
@@ -11,11 +12,12 @@ import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <main className="overflow-x-hidden">
-
+    <main>
       <Navbar />
 
       <Hero />
+
+      <NoticeBoard />
 
       <About />
 
@@ -29,12 +31,9 @@ export default function Home() {
 
       <Admission />
 
-      
-
       <Contact />
 
       <Footer />
-
     </main>
   );
 }
