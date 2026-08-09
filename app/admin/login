@@ -1,36 +1,106 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
 export default function AdminLoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setError("");
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      setError("Invalid email or password. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/admin");
+    router.refresh();
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-lg">
-        <h1 className="text-3xl font-extrabold text-gray-900">
-          Admin Login
-        </h1>
+    <main className="min-h-screen bg-gray-100 px-6 py-12 flex items-center justify-center">
+      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Admin Login
+          </h1>
 
-        <p className="mt-2 text-gray-600">
-          Login to access the Madrasa administration panel.
-        </p>
+          <p className="mt-2 text-gray-600">
+            Login to access the Madrasa administration panel.
+          </p>
+        </div>
 
-        <div className="mt-8 space-y-5">
-          <input
-            type="email"
-            placeholder="Admin email"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-green-600"
-          />
+        <form onSubmit={handleLogin} className="mt-8 space-y-5">
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Admin Email
+            </label>
 
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-green-600"
-          />
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Enter admin email"
+              autoComplete="email"
+              required
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter password"
+              autoComplete="current-password"
+              required
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {error}
+            </div>
+          )}
 
           <button
-            type="button"
-            className="w-full rounded-xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700"
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
-        </div>
+        </form>
       </div>
     </main>
   );
