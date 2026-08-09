@@ -60,12 +60,13 @@ export default function Teachers() {
             >
 
               {/* Teacher Image */}
-              <div className="relative mx-auto h-48 w-full overflow-hidden rounded-2xl">
+              <div className="relative mx-auto h-64 w-full overflow-hidden rounded-2xl bg-gray-100">
                 <Image
                   src={teacher.image}
                   alt={teacher.name}
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-contain"
                 />
               </div>
 
