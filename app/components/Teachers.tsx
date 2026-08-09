@@ -26,17 +26,20 @@ export default function Teachers() {
   ];
 
   return (
-    <section id="teachers" className="bg-gray-50 py-24">
+    <section
+      id="teachers"
+      className="bg-gradient-to-b from-white via-gray-50 to-white py-24"
+    >
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
 
-        {/* Heading */}
+        {/* Section Heading */}
         <div className="mb-16 text-center">
 
           <p className="font-semibold uppercase tracking-[4px] text-green-600">
             Our Faculty
           </p>
 
-          <h2 className="mt-3 text-4xl font-extrabold text-gray-900 md:text-5xl">
+          <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-gray-900 md:text-5xl">
             Meet Our Teachers
           </h2>
 
@@ -53,38 +56,41 @@ export default function Teachers() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 
           {teachers.map((teacher, index) => (
-
             <div
               key={index}
-              className="rounded-3xl bg-white p-6 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl"
+              className="group overflow-hidden rounded-[28px] border border-gray-200 bg-white p-4 shadow-md transition-all duration-300 hover:-translate-y-2 hover:border-green-200 hover:shadow-2xl"
             >
 
-              {/* Teacher Image */}
-              <div className="relative mx-auto h-64 w-full overflow-hidden rounded-2xl bg-gray-100">
+              {/* Image Area */}
+              <div className="relative h-72 w-full overflow-hidden rounded-[22px] bg-gray-100">
+
                 <Image
                   src={teacher.image}
                   alt={teacher.name}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-contain"
+                  className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.03]"
                 />
+
               </div>
 
-              {/* Teacher Name */}
-              <h3 className="mt-6 text-center text-xl font-bold leading-8 text-gray-900">
-                {teacher.name}
-              </h3>
+              {/* Teacher Information */}
+              <div className="px-2 pb-3 pt-6">
 
-              {/* Green Divider */}
-              <div className="mx-auto my-4 h-1 w-14 rounded-full bg-green-600"></div>
+                <h3 className="text-center text-xl font-bold leading-8 text-gray-900">
+                  {teacher.name}
+                </h3>
 
-              {/* Subject */}
-              <p className="text-center font-semibold leading-7 text-green-700">
-                {teacher.subject}
-              </p>
+                {/* Divider */}
+                <div className="mx-auto my-4 h-1 w-14 rounded-full bg-green-600"></div>
+
+                <p className="text-center text-sm font-semibold leading-7 text-green-700">
+                  {teacher.subject}
+                </p>
+
+              </div>
 
             </div>
-
           ))}
 
         </div>
