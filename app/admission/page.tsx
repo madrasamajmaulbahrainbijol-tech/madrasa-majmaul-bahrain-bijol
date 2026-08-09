@@ -64,10 +64,6 @@ export default function AdmissionPage() {
         throw new Error("Please select a course.");
       }
 
-      /*
-       * Backend abhi fresh setup kiya jayega.
-       * Isliye filhaal form data ko console mein check kar rahe hain.
-       */
       console.log("Admission form data:", cleanData);
 
       setSuccessMessage(
@@ -340,7 +336,7 @@ export default function AdmissionPage() {
                       value={formData.full_name}
                       onChange={handleChange}
                       placeholder="Enter student's full name"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
                   </div>
 
@@ -361,7 +357,7 @@ export default function AdmissionPage() {
                       value={formData.father_name}
                       onChange={handleChange}
                       placeholder="Enter father/guardian name"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
                   </div>
 
@@ -382,7 +378,7 @@ export default function AdmissionPage() {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="Enter mobile number"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
                   </div>
 
@@ -402,7 +398,7 @@ export default function AdmissionPage() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="Enter email address"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
                   </div>
 
@@ -421,9 +417,11 @@ export default function AdmissionPage() {
                       required
                       value={formData.course}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     >
-                      <option value="">Select a course</option>
+                      <option value="" className="text-gray-400">
+                        Select a course
+                      </option>
 
                       <option value="Hifz-ul-Quran">
                         Hifz-ul-Quran
@@ -459,7 +457,7 @@ export default function AdmissionPage() {
                       value={formData.message}
                       onChange={handleChange}
                       placeholder="Any additional information..."
-                      className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
                   </div>
                 </div>
