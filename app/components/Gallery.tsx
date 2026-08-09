@@ -1,65 +1,93 @@
+import Image from "next/image";
+
 export default function Gallery() {
   const gallery = [
-    "Campus",
-    "Classroom",
-    "Students",
-    "Library",
-    "Prayer Hall",
-    "Annual Program",
+    {
+      title: "Campus",
+      image: "/campus.jpg",
+    },
+    {
+      title: "Classroom",
+      image: "/classroom.jpg",
+    },
+    {
+      title: "Students",
+      image: "/students.jpg",
+    },
+    {
+      title: "Library",
+      image: "/library.jpg",
+    },
+    {
+      title: "Prayer Hall",
+      image: "/prayer-hall.jpg",
+    },
+    {
+      title: "Annual Program",
+      image: "/annual-program.jpg",
+    },
   ];
 
   return (
-    <section id="gallery" className="bg-gray-50 py-24">
-      <div className="max-w-7xl mx-auto px-6">
+    <section id="gallery" className="bg-white py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-10">
 
         {/* Heading */}
-        <div className="text-center mb-16">
-          <p className="text-green-600 font-semibold tracking-[4px] uppercase">
+        <div className="mb-16 text-center">
+          <p className="font-semibold uppercase tracking-[4px] text-green-600">
             Our Gallery
           </p>
 
-          <h2 className="mt-3 text-4xl md:text-5xl font-extrabold text-gray-900">
+          <h2 className="mt-3 text-4xl font-extrabold text-gray-900 md:text-5xl">
             Campus Moments
           </h2>
 
           <div className="mx-auto mt-5 h-1 w-24 rounded-full bg-green-600"></div>
 
-          <p className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto">
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-gray-600">
             Explore our madrasa campus, classrooms, students and educational
             environment.
           </p>
         </div>
 
         {/* Gallery Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 
           {gallery.map((item, index) => (
-
             <div
               key={index}
-              className="group overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition duration-300"
+              className="group overflow-hidden rounded-[30px] border border-gray-200 bg-white transition duration-300 hover:-translate-y-1"
             >
 
-              <div className="h-64 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+              {/* Image */}
+              <div className="relative h-72 w-full overflow-hidden rounded-[26px] bg-gray-100">
 
-                <span className="text-6xl">📷</span>
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
 
               </div>
 
+              {/* Details */}
               <div className="p-6">
 
                 <h3 className="text-xl font-bold text-gray-900">
-                  {item}
+                  {item.title}
                 </h3>
 
-                <p className="mt-2 text-gray-600">
-                  Image will be added here later.
+                <div className="mt-3 h-1 w-12 rounded-full bg-green-600"></div>
+
+                <p className="mt-3 text-gray-600">
+                  A glimpse of Madrasa Majmaul Bahrain Bijol.
                 </p>
 
               </div>
 
             </div>
-
           ))}
 
         </div>
