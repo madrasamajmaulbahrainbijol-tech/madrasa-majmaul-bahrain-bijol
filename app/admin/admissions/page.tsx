@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase/client";
 
@@ -12,19 +12,19 @@ type Admission = {
   email: string | null;
   course: string | null;
   message: string | null;
-  created_at: string | null;
 };
 
 export default function AdminAdmissionsPage() {
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAdmissions = useCallback(async () => {
+  async function loadAdmissions() {
+    setLoading(true);
+    setErrorMessage("");
+
     try {
-      setErrorMessage("");
-
+      // Check logged-in admin
       const {
         data: { user },
         error: userError,
@@ -39,65 +39,46 @@ export default function AdminAdmissionsPage() {
         return;
       }
 
+      // Fetch admission applications
       const { data, error } = await supabase
         .from("admissions")
         .select(
-          "id, student_name, guardian_name, mobile, email, course, message, created_at"
+          "id, student_name, guardian_name, mobile, email, course, message"
         )
-        .order("created_at", { ascending: false });
+        .order("id", { ascending: false });
 
       if (error) {
-        console.error("Supabase admissions error:", error);
+        console.error("Admissions query error:", error);
         throw new Error(error.message);
       }
 
       setAdmissions(data || []);
     } catch (error) {
-      console.error("Fetch admissions error:", error);
+      console.error("Load admissions error:", error);
 
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
         setErrorMessage(
-          "Admissions data load nahi ho saka. Please dobara try karein."
+          "Admission applications load nahi ho pa rahi hain."
         );
       }
+
+      setAdmissions([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
-    fetchAdmissions();
-  }, [fetchAdmissions]);
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    await fetchAdmissions();
-  }
-
-  function formatDate(date: string | null) {
-    if (!date) return "—";
-
-    try {
-      return new Date(date).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return date;
-    }
-  }
+    loadAdmissions();
+  }, []);
 
   return (
     <main className="min-h-screen bg-gray-50">
       {/* HEADER */}
       <header className="border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <div>
             <p className="text-sm font-bold text-green-700">
               Madrasa Majmaul Bahrain Bijol
@@ -110,7 +91,7 @@ export default function AdminAdmissionsPage() {
 
           <Link
             href="/admin/dashboard"
-            className="rounded-xl bg-green-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-800"
+            className="rounded-xl bg-green-700 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-green-800"
           >
             ← Dashboard
           </Link>
@@ -118,22 +99,22 @@ export default function AdminAdmissionsPage() {
       </header>
 
       {/* MAIN */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* GREEN SUMMARY */}
-        <div className="rounded-3xl bg-gradient-to-r from-green-900 via-green-800 to-green-600 p-7 text-white shadow-xl sm:p-9">
-          <p className="text-sm font-semibold uppercase tracking-[3px] text-green-200">
-            Online Admissions
-          </p>
-
-          <div className="mt-3 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        {/* HERO */}
+        <div className="rounded-3xl bg-gradient-to-r from-green-950 via-green-800 to-green-600 p-8 text-white shadow-xl sm:p-10">
+          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <h2 className="text-3xl font-extrabold sm:text-4xl">
+              <p className="font-semibold uppercase tracking-[4px] text-green-200">
+                Online Admissions
+              </p>
+
+              <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl">
                 All Admission Applications
               </h2>
 
-              <p className="mt-3 text-green-100">
-                Total applications received:
-                <span className="ml-2 text-xl font-extrabold text-white">
+              <p className="mt-4 text-lg text-green-100">
+                Total applications received:{" "}
+                <span className="font-extrabold text-white">
                   {admissions.length}
                 </span>
               </p>
@@ -141,11 +122,11 @@ export default function AdminAdmissionsPage() {
 
             <button
               type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="rounded-xl bg-white px-5 py-3 font-bold text-green-800 shadow-md transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={loadAdmissions}
+              disabled={loading}
+              className="rounded-xl bg-white px-6 py-3 font-bold text-green-700 shadow-lg transition hover:bg-green-50 disabled:opacity-60"
             >
-              {refreshing ? "Refreshing..." : "↻ Refresh"}
+              {loading ? "Loading..." : "↻ Refresh"}
             </button>
           </div>
         </div>
@@ -153,39 +134,35 @@ export default function AdminAdmissionsPage() {
         {/* ERROR */}
         {errorMessage && (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm">
-            <p className="font-extrabold">❌ Admission data load error</p>
+            <p className="font-bold">❌ Error loading admissions</p>
 
             <p className="mt-2 text-sm">
               {errorMessage}
             </p>
-
-            <button
-              type="button"
-              onClick={handleRefresh}
-              className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
-            >
-              Try Again
-            </button>
           </div>
         )}
 
         {/* LOADING */}
         {loading && (
-          <div className="mt-8 rounded-3xl bg-white p-12 text-center shadow-sm ring-1 ring-gray-100">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-green-700" />
+          <div className="mt-8 rounded-3xl bg-white p-16 text-center shadow-sm">
+            <div className="text-5xl">⏳</div>
 
-            <p className="mt-5 font-semibold text-gray-600">
-              Loading admission applications...
+            <h3 className="mt-5 text-2xl font-bold text-gray-900">
+              Loading Applications...
+            </h3>
+
+            <p className="mt-2 text-gray-500">
+              Please wait while admission applications are loaded.
             </p>
           </div>
         )}
 
-        {/* EMPTY */}
+        {/* NO DATA */}
         {!loading && !errorMessage && admissions.length === 0 && (
-          <div className="mt-8 rounded-3xl bg-white p-14 text-center shadow-sm ring-1 ring-gray-100">
+          <div className="mt-8 rounded-3xl bg-white p-16 text-center shadow-sm">
             <div className="text-6xl">📋</div>
 
-            <h3 className="mt-5 text-2xl font-extrabold text-gray-900">
+            <h3 className="mt-6 text-2xl font-extrabold text-gray-900">
               No Admission Applications
             </h3>
 
@@ -195,140 +172,112 @@ export default function AdminAdmissionsPage() {
           </div>
         )}
 
-        {/* ADMISSIONS TABLE */}
+        {/* APPLICATIONS */}
         {!loading && admissions.length > 0 && (
-          <div className="mt-8 overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-100">
-            <div className="border-b border-gray-200 px-6 py-5">
-              <h3 className="text-xl font-extrabold text-gray-900">
-                Received Applications
-              </h3>
+          <div className="mt-8 space-y-6">
+            {admissions.map((admission, index) => (
+              <div
+                key={admission.id}
+                className="overflow-hidden rounded-3xl bg-white shadow-md ring-1 ring-gray-100"
+              >
+                {/* CARD HEADER */}
+                <div className="flex flex-col justify-between gap-4 border-b border-gray-100 bg-gray-50 px-6 py-5 sm:flex-row sm:items-center sm:px-8">
+                  <div>
+                    <p className="text-sm font-semibold text-green-700">
+                      Application #{admissions.length - index}
+                    </p>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Latest applications are shown first.
-              </p>
-            </div>
-
-            {/* MOBILE CARDS */}
-            <div className="divide-y divide-gray-200 md:hidden">
-              {admissions.map((admission) => (
-                <div key={admission.id} className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-lg font-extrabold text-gray-900">
-                        {admission.student_name || "—"}
-                      </p>
-
-                      <p className="mt-1 text-sm text-gray-500">
-                        Guardian: {admission.guardian_name || "—"}
-                      </p>
-                    </div>
-
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">
-                      {admission.course || "Course not selected"}
-                    </span>
+                    <h3 className="mt-1 text-2xl font-extrabold text-gray-900">
+                      {admission.student_name || "Student Name Not Provided"}
+                    </h3>
                   </div>
 
-                  <div className="mt-5 space-y-2 text-sm text-gray-700">
-                    <p>
-                      <span className="font-bold">📱 Mobile:</span>{" "}
+                  <span className="w-fit rounded-full bg-green-100 px-4 py-2 text-sm font-bold text-green-800">
+                    New Application
+                  </span>
+                </div>
+
+                {/* CARD BODY */}
+                <div className="grid gap-6 px-6 py-7 sm:grid-cols-2 sm:px-8 lg:grid-cols-3">
+                  {/* STUDENT */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">
+                      Student Name
+                    </p>
+
+                    <p className="mt-1 font-bold text-gray-900">
+                      {admission.student_name || "—"}
+                    </p>
+                  </div>
+
+                  {/* GUARDIAN */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">
+                      Father / Guardian
+                    </p>
+
+                    <p className="mt-1 font-bold text-gray-900">
+                      {admission.guardian_name || "—"}
+                    </p>
+                  </div>
+
+                  {/* MOBILE */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">
+                      Mobile Number
+                    </p>
+
+                    <p className="mt-1 font-bold text-gray-900">
                       {admission.mobile || "—"}
                     </p>
+                  </div>
 
-                    <p>
-                      <span className="font-bold">📧 Email:</span>{" "}
-                      {admission.email || "—"}
+                  {/* EMAIL */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">
+                      Email
                     </p>
 
-                    <p>
-                      <span className="font-bold">📅 Submitted:</span>{" "}
-                      {formatDate(admission.created_at)}
+                    <p className="mt-1 break-all font-bold text-gray-900">
+                      {admission.email || "—"}
                     </p>
                   </div>
 
-                  {admission.message && (
-                    <div className="mt-4 rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                        Message
-                      </p>
+                  {/* COURSE */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">
+                      Course / Program
+                    </p>
 
-                      <p className="mt-2 text-sm leading-6 text-gray-700">
-                        {admission.message}
-                      </p>
+                    <p className="mt-1 font-bold text-green-700">
+                      {admission.course || "—"}
+                    </p>
+                  </div>
+
+                  {/* ID */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">
+                      Application ID
+                    </p>
+
+                    <p className="mt-1 break-all text-sm font-medium text-gray-700">
+                      {admission.id}
+                    </p>
+                  </div>
+
+                  {/* MESSAGE */}
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <p className="text-sm font-semibold text-gray-500">
+                      Additional Message
+                    </p>
+
+                    <div className="mt-2 rounded-2xl bg-gray-50 p-5 text-gray-700">
+                      {admission.message || "No additional message."}
                     </div>
-                  )}
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* DESKTOP TABLE */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
-                      Student
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
-                      Guardian
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
-                      Mobile
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
-                      Course
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
-                      Email
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
-                      Submitted
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-gray-200">
-                  {admissions.map((admission) => (
-                    <tr
-                      key={admission.id}
-                      className="transition hover:bg-green-50/50"
-                    >
-                      <td className="px-6 py-5">
-                        <p className="font-bold text-gray-900">
-                          {admission.student_name || "—"}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-700">
-                        {admission.guardian_name || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm font-semibold text-gray-700">
-                        {admission.mobile || "—"}
-                      </td>
-
-                      <td className="px-6 py-5">
-                        <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">
-                          {admission.course || "—"}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-700">
-                        {admission.email || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-500">
-                        {formatDate(admission.created_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              </div>
+            ))}
           </div>
         )}
       </section>
