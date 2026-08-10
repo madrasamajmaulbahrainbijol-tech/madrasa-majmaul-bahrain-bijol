@@ -10,22 +10,78 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
 
+  const [admissionCount, setAdmissionCount] = useState(0);
+  const [enquiryCount, setEnquiryCount] = useState(0);
+  const [studentCount, setStudentCount] = useState(0);
+
   useEffect(() => {
-    async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    async function loadDashboard() {
+      try {
+        // Check logged-in admin
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.replace("/admin");
-        return;
+        if (!user) {
+          router.replace("/admin");
+          return;
+        }
+
+        setEmail(user.email || "");
+
+        // Get Admission Applications count
+        const { count: admissionsCount, error: admissionsError } =
+          await supabase
+            .from("admissions")
+            .select("*", { count: "exact", head: true });
+
+        if (admissionsError) {
+          console.error(
+            "Admissions count error:",
+            admissionsError.message
+          );
+        } else {
+          setAdmissionCount(admissionsCount || 0);
+        }
+
+        // Get Enquiries count
+        const { count: enquiriesCount, error: enquiriesError } =
+          await supabase
+            .from("enquiries")
+            .select("*", { count: "exact", head: true });
+
+        if (enquiriesError) {
+          console.error(
+            "Enquiries count error:",
+            enquiriesError.message
+          );
+        } else {
+          setEnquiryCount(enquiriesCount || 0);
+        }
+
+        // Get Students count
+        const { count: studentsCount, error: studentsError } =
+          await supabase
+            .from("students")
+            .select("*", { count: "exact", head: true });
+
+        if (studentsError) {
+          console.error(
+            "Students count error:",
+            studentsError.message
+          );
+        } else {
+          setStudentCount(studentsCount || 0);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Dashboard loading error:", error);
+        setLoading(false);
       }
-
-      setEmail(user.email || "");
-      setLoading(false);
     }
 
-    checkUser();
+    loadDashboard();
   }, [router]);
 
   async function handleLogout() {
@@ -36,9 +92,9 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50">
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-green-200 border-t-green-700"></div>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-green-200 border-t-green-700" />
 
           <p className="mt-4 font-medium text-gray-600">
             Loading admin panel...
@@ -50,11 +106,11 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* HEADER */}
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div>
-            <p className="text-sm font-medium text-green-700">
+            <p className="text-sm font-semibold text-green-700">
               Madrasa Majmaul Bahrain Bijol
             </p>
 
@@ -73,9 +129,9 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* MAIN CONTENT */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Welcome */}
+        {/* WELCOME */}
         <div className="rounded-2xl bg-gradient-to-r from-green-700 to-green-600 p-6 text-white shadow-lg">
           <p className="text-sm font-medium text-green-100">
             Welcome back
@@ -90,9 +146,9 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Dashboard Cards */}
+        {/* DASHBOARD CARDS */}
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Admissions */}
+          {/* ADMISSIONS */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl">
               🎓
@@ -108,13 +164,14 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              className="mt-5 text-sm font-bold text-green-700 hover:text-green-800"
+              onClick={() => router.push("/admin/admissions")}
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Admissions →
             </button>
           </div>
 
-          {/* Enquiries */}
+          {/* ENQUIRIES */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-2xl">
               📩
@@ -130,13 +187,14 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              className="mt-5 text-sm font-bold text-green-700 hover:text-green-800"
+              onClick={() => router.push("/admin/enquiries")}
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Enquiries →
             </button>
           </div>
 
-          {/* Students */}
+          {/* STUDENTS */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-2xl">
               👨‍🎓
@@ -152,13 +210,14 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              className="mt-5 text-sm font-bold text-green-700 hover:text-green-800"
+              onClick={() => router.push("/admin/students")}
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Students →
             </button>
           </div>
 
-          {/* Website */}
+          {/* WEBSITE */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
               🌐
@@ -175,37 +234,118 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => router.push("/")}
-              className="mt-5 text-sm font-bold text-green-700 hover:text-green-800"
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Open Website →
             </button>
           </div>
         </div>
 
-        {/* Quick Information */}
+        {/* QUICK INFORMATION */}
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900">
-            Quick Information
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-900">
+              Quick Information
+            </h3>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+            >
+              Refresh
+            </button>
+          </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            {/* TOTAL STUDENTS */}
             <div className="rounded-xl bg-gray-50 p-5">
-              <p className="text-sm text-gray-500">Total Students</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">0</p>
+              <p className="text-sm text-gray-500">
+                Total Students
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {studentCount}
+              </p>
             </div>
 
+            {/* ADMISSIONS */}
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">
                 Admission Applications
               </p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">0</p>
+
+              <p className="mt-2 text-3xl font-bold text-green-700">
+                {admissionCount}
+              </p>
             </div>
 
+            {/* ENQUIRIES */}
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">
                 New Enquiries
               </p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">0</p>
+
+              <p className="mt-2 text-3xl font-bold text-blue-700">
+                {enquiryCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* RECENT STATUS */}
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="text-xl font-bold text-gray-900">
+            System Status
+          </h3>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                ✅
+              </div>
+
+              <div>
+                <p className="font-bold text-green-800">
+                  Admin Login
+                </p>
+
+                <p className="text-sm text-green-700">
+                  Active
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                ✅
+              </div>
+
+              <div>
+                <p className="font-bold text-green-800">
+                  Supabase
+                </p>
+
+                <p className="text-sm text-green-700">
+                  Connected
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                ✅
+              </div>
+
+              <div>
+                <p className="font-bold text-green-800">
+                  Website
+                </p>
+
+                <p className="text-sm text-green-700">
+                  Online
+                </p>
+              </div>
             </div>
           </div>
         </div>
