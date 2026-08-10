@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
+import { supabase } from "../lib/supabase/client";
 
 export default function AdmissionPage() {
   const [formData, setFormData] = useState({
@@ -64,10 +65,28 @@ export default function AdmissionPage() {
         throw new Error("Please select a course.");
       }
 
-      console.log("Admission form data:", cleanData);
+      // Save admission application to Supabase
+      const { error } = await supabase.from("admissions").insert([
+        {
+          student_name: cleanData.full_name,
+          guardian_name: cleanData.father_name,
+          mobile: cleanData.phone,
+          email: cleanData.email || null,
+          course: cleanData.course,
+          message: cleanData.message || null,
+          status: "pending",
+        },
+      ]);
+
+      if (error) {
+        console.error("Supabase admission error:", error);
+        throw new Error(
+          error.message || "Admission form could not be submitted."
+        );
+      }
 
       setSuccessMessage(
-        "Form successfully filled. Backend connection next step mein connect ki jayegi."
+        "JazakAllahu Khairan! Your admission application has been submitted successfully. Our office team will contact you soon."
       );
 
       setFormData({
@@ -96,8 +115,8 @@ export default function AdmissionPage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-gradient-to-r from-green-950 via-green-800 to-green-600 px-6 pb-20 pt-32">
-        <div className="absolute inset-0 bg-black/10" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-green-950 via-green-800 to-green-600 px-6 py-28 sm:py-32">
+        <div className="absolute inset-0 bg-black/20" />
 
         <div className="relative z-10 mx-auto max-w-5xl text-center text-white">
           <p className="mb-5 text-sm font-bold uppercase tracking-[5px] text-green-200 sm:text-lg">
@@ -419,9 +438,7 @@ export default function AdmissionPage() {
                       onChange={handleChange}
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     >
-                      <option value="" className="text-gray-400">
-                        Select a course
-                      </option>
+                      <option value="">Select a course</option>
 
                       <option value="Hifz-ul-Quran">
                         Hifz-ul-Quran
