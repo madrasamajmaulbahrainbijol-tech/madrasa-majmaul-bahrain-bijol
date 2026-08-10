@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     });
 
     if (error) {
-      setError("Email ya password galat hai.");
+      setError(error.message);
       setLoading(false);
       return;
     }
