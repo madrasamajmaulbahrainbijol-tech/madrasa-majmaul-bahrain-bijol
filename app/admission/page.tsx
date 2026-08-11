@@ -74,12 +74,17 @@ export default function AdmissionPage() {
           email: cleanData.email || null,
           course: cleanData.course,
           message: cleanData.message || null,
-          status: "pending",
+
+          // IMPORTANT:
+          // Supabase admissions_status_check allows:
+          // new, under_review, approved, rejected
+          status: "new",
         },
       ]);
 
       if (error) {
         console.error("Supabase admission error:", error);
+
         throw new Error(
           error.message || "Admission form could not be submitted."
         );
@@ -126,6 +131,7 @@ export default function AdmissionPage() {
           <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl">
             Admission Open
             <br />
+
             <span className="text-green-100">
               Madrasa Majmaul Bahrain Bijol
             </span>
@@ -216,9 +222,13 @@ export default function AdmissionPage() {
                 <li>
                   ✅ Boys seeking quality Islamic and Modern Education.
                 </li>
+
                 <li>✅ Good moral character and discipline.</li>
+
                 <li>✅ Previous academic record if applicable.</li>
+
                 <li>✅ Parent/Guardian consent is mandatory.</li>
+
                 <li>✅ Admission is subject to seat availability.</li>
               </ul>
             </div>
@@ -230,10 +240,15 @@ export default function AdmissionPage() {
 
               <ul className="space-y-5 text-lg leading-8 text-gray-700">
                 <li>📄 Birth Certificate</li>
+
                 <li>📄 Aadhaar Card</li>
+
                 <li>📄 Previous School Certificate</li>
+
                 <li>📄 Passport Size Photographs</li>
+
                 <li>📄 Parent/Guardian Aadhaar</li>
+
                 <li>📄 Residence Proof</li>
               </ul>
             </div>
@@ -321,12 +336,14 @@ export default function AdmissionPage() {
                 </p>
               </div>
 
+              {/* SUCCESS MESSAGE */}
               {successMessage && (
                 <div className="mt-8 rounded-2xl bg-green-100 p-5 text-center font-semibold text-green-800">
                   ✅ {successMessage}
                 </div>
               )}
 
+              {/* ERROR MESSAGE */}
               {errorMessage && (
                 <div className="mt-8 rounded-2xl bg-red-100 p-5 text-center font-semibold text-red-700">
                   ❌ {errorMessage}
