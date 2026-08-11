@@ -29,11 +29,15 @@ export default function AdminDashboardPage() {
 
         setEmail(user.email || "");
 
-        // Get Admission Applications count
-        const { count: admissionsCount, error: admissionsError } =
-          await supabase
-            .from("admissions")
-            .select("*", { count: "exact", head: true });
+        // ==========================================
+        // TOTAL ADMISSION APPLICATIONS
+        // ==========================================
+        const {
+          count: admissionsCount,
+          error: admissionsError,
+        } = await supabase
+          .from("admissions")
+          .select("*", { count: "exact", head: true });
 
         if (admissionsError) {
           console.error(
@@ -44,11 +48,16 @@ export default function AdminDashboardPage() {
           setAdmissionCount(admissionsCount || 0);
         }
 
-        // Get Enquiries count
-        const { count: enquiriesCount, error: enquiriesError } =
-          await supabase
-            .from("enquiries")
-            .select("*", { count: "exact", head: true });
+        // ==========================================
+        // NEW ENQUIRIES
+        // ==========================================
+        const {
+          count: enquiriesCount,
+          error: enquiriesError,
+        } = await supabase
+          .from("enquiries")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "new");
 
         if (enquiriesError) {
           console.error(
@@ -59,19 +68,25 @@ export default function AdminDashboardPage() {
           setEnquiryCount(enquiriesCount || 0);
         }
 
-        // Get Students count
-        const { count: studentsCount, error: studentsError } =
-          await supabase
-            .from("students")
-            .select("*", { count: "exact", head: true });
+        // ==========================================
+        // TOTAL STUDENTS
+        // ONLY APPROVED ADMISSIONS
+        // ==========================================
+        const {
+          count: approvedStudentsCount,
+          error: approvedStudentsError,
+        } = await supabase
+          .from("admissions")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "approved");
 
-        if (studentsError) {
+        if (approvedStudentsError) {
           console.error(
-            "Students count error:",
-            studentsError.message
+            "Approved students count error:",
+            approvedStudentsError.message
           );
         } else {
-          setStudentCount(studentsCount || 0);
+          setStudentCount(approvedStudentsCount || 0);
         }
 
         setLoading(false);
@@ -84,12 +99,18 @@ export default function AdminDashboardPage() {
     loadDashboard();
   }, [router]);
 
+  // ==========================================
+  // LOGOUT
+  // ==========================================
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace("/admin");
     router.refresh();
   }
 
+  // ==========================================
+  // LOADING SCREEN
+  // ==========================================
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -106,9 +127,13 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* HEADER */}
+
+      {/* ==========================================
+          HEADER
+      ========================================== */}
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+
           <div>
             <p className="text-sm font-semibold text-green-700">
               Madrasa Majmaul Bahrain Bijol
@@ -126,13 +151,20 @@ export default function AdminDashboardPage() {
           >
             Logout
           </button>
+
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
+      {/* ==========================================
+          MAIN CONTENT
+      ========================================== */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* WELCOME */}
+
+        {/* ==========================================
+            WELCOME
+        ========================================== */}
         <div className="rounded-2xl bg-gradient-to-r from-green-700 to-green-600 p-6 text-white shadow-lg">
+
           <p className="text-sm font-medium text-green-100">
             Welcome back
           </p>
@@ -144,12 +176,17 @@ export default function AdminDashboardPage() {
           <p className="mt-2 text-sm text-green-100">
             Logged in as: {email}
           </p>
+
         </div>
 
-        {/* DASHBOARD CARDS */}
+        {/* ==========================================
+            DASHBOARD CARDS
+        ========================================== */}
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
           {/* ADMISSIONS */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl">
               🎓
             </div>
@@ -169,10 +206,12 @@ export default function AdminDashboardPage() {
             >
               View Admissions →
             </button>
+
           </div>
 
           {/* ENQUIRIES */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-2xl">
               📩
             </div>
@@ -192,10 +231,12 @@ export default function AdminDashboardPage() {
             >
               View Enquiries →
             </button>
+
           </div>
 
           {/* STUDENTS */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-2xl">
               👨‍🎓
             </div>
@@ -205,7 +246,7 @@ export default function AdminDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm text-gray-500">
-              Manage registered students and records.
+              Manage approved students and their records.
             </p>
 
             <button
@@ -215,10 +256,12 @@ export default function AdminDashboardPage() {
             >
               View Students →
             </button>
+
           </div>
 
           {/* WEBSITE */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
               🌐
             </div>
@@ -238,12 +281,18 @@ export default function AdminDashboardPage() {
             >
               Open Website →
             </button>
+
           </div>
+
         </div>
 
-        {/* QUICK INFORMATION */}
+        {/* ==========================================
+            QUICK INFORMATION
+        ========================================== */}
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
           <div className="flex items-center justify-between">
+
             <h3 className="text-xl font-bold text-gray-900">
               Quick Information
             </h3>
@@ -255,11 +304,14 @@ export default function AdminDashboardPage() {
             >
               Refresh
             </button>
+
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            {/* TOTAL STUDENTS */}
+
+            {/* TOTAL APPROVED STUDENTS */}
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 Total Students
               </p>
@@ -267,10 +319,16 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-gray-900">
                 {studentCount}
               </p>
+
+              <p className="mt-1 text-xs text-gray-400">
+                Approved admissions only
+              </p>
+
             </div>
 
-            {/* ADMISSIONS */}
+            {/* ADMISSION APPLICATIONS */}
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 Admission Applications
               </p>
@@ -278,10 +336,12 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-green-700">
                 {admissionCount}
               </p>
+
             </div>
 
-            {/* ENQUIRIES */}
+            {/* NEW ENQUIRIES */}
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 New Enquiries
               </p>
@@ -289,23 +349,33 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-blue-700">
                 {enquiryCount}
               </p>
+
             </div>
+
           </div>
+
         </div>
 
-        {/* RECENT STATUS */}
+        {/* ==========================================
+            SYSTEM STATUS
+        ========================================== */}
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
           <h3 className="text-xl font-bold text-gray-900">
             System Status
           </h3>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
+
+            {/* ADMIN LOGIN */}
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
 
               <div>
+
                 <p className="font-bold text-green-800">
                   Admin Login
                 </p>
@@ -313,15 +383,20 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-green-700">
                   Active
                 </p>
+
               </div>
+
             </div>
 
+            {/* SUPABASE */}
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
 
               <div>
+
                 <p className="font-bold text-green-800">
                   Supabase
                 </p>
@@ -329,15 +404,20 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-green-700">
                   Connected
                 </p>
+
               </div>
+
             </div>
 
+            {/* WEBSITE */}
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
 
               <div>
+
                 <p className="font-bold text-green-800">
                   Website
                 </p>
@@ -345,11 +425,17 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-green-700">
                   Online
                 </p>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </section>
+
     </main>
   );
 }
