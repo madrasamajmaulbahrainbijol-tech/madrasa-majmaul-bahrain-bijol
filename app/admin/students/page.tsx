@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../../lib/supabase/client";
+import { supabase } from "../../lib/supabase/client";
 
 type Student = {
   id: string;
@@ -23,7 +23,8 @@ export default function StudentsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] =
+    useState<Student | null>(null);
 
   const loadStudents = async () => {
     setError("");
@@ -70,10 +71,18 @@ export default function StudentsPage() {
     }
 
     return students.filter((student) => {
-      const studentName = String(student.student_name || "").toLowerCase();
-      const guardianName = String(student.guardian_name || "").toLowerCase();
+      const studentName = String(
+        student.student_name || ""
+      ).toLowerCase();
+
+      const guardianName = String(
+        student.guardian_name || ""
+      ).toLowerCase();
+
       const mobile = String(student.mobile || "").toLowerCase();
+
       const email = String(student.email || "").toLowerCase();
+
       const course = String(student.course || "").toLowerCase();
 
       return (
@@ -125,11 +134,18 @@ export default function StudentsPage() {
       return words[0].slice(0, 2).toUpperCase();
     }
 
-    return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+    return `${words[0][0]}${
+      words[words.length - 1][0]
+    }`.toUpperCase();
   };
 
-  const getStudentNumber = (student: Student, index: number) => {
-    const position = students.findIndex((item) => item.id === student.id);
+  const getStudentNumber = (
+    student: Student,
+    index: number
+  ) => {
+    const position = students.findIndex(
+      (item) => item.id === student.id
+    );
 
     if (position >= 0) {
       return position + 1;
@@ -181,8 +197,9 @@ export default function StudentsPage() {
               </h2>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-green-50 md:text-base">
-                This section automatically shows students whose admission
-                applications have been approved by the madrasa administration.
+                This section automatically shows students whose
+                admission applications have been approved by the
+                madrasa administration.
               </p>
             </div>
 
@@ -199,6 +216,7 @@ export default function StudentsPage() {
 
         {/* STAT CARDS */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* TOTAL */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">
               Total Students
@@ -213,6 +231,7 @@ export default function StudentsPage() {
             </p>
           </div>
 
+          {/* SHOWING */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">
               Showing
@@ -227,6 +246,7 @@ export default function StudentsPage() {
             </p>
           </div>
 
+          {/* STATUS */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">
               Admission Status
@@ -241,6 +261,7 @@ export default function StudentsPage() {
             </p>
           </div>
 
+          {/* DATABASE */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">
               Data Source
@@ -276,7 +297,9 @@ export default function StudentsPage() {
                   id="student-search"
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) =>
+                    setSearch(e.target.value)
+                  }
                   placeholder="Search student, guardian, mobile, email or course..."
                   className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-12 pr-4 text-sm outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                 />
@@ -296,7 +319,10 @@ export default function StudentsPage() {
         {/* ERROR */}
         {error && (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
-            <p className="font-bold">Unable to load students</p>
+            <p className="font-bold">
+              Unable to load students
+            </p>
+
             <p className="mt-1 text-sm">{error}</p>
           </div>
         )}
@@ -313,33 +339,37 @@ export default function StudentsPage() {
         )}
 
         {/* EMPTY */}
-        {!loading && !error && filteredStudents.length === 0 && (
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-4xl">
-              🎓
+        {!loading &&
+          !error &&
+          filteredStudents.length === 0 && (
+            <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-4xl">
+                🎓
+              </div>
+
+              <h3 className="mt-5 text-2xl font-extrabold text-slate-900">
+                {search
+                  ? "No students found"
+                  : "No approved students yet"}
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                {search
+                  ? "No approved student matches your search. Try another name, mobile number, email or course."
+                  : "Students will automatically appear here after their admission application is approved from the Admissions section."}
+              </p>
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="mt-5 rounded-xl bg-green-700 px-5 py-3 text-sm font-bold text-white hover:bg-green-800"
+                >
+                  Clear Search
+                </button>
+              )}
             </div>
-
-            <h3 className="mt-5 text-2xl font-extrabold text-slate-900">
-              {search ? "No students found" : "No approved students yet"}
-            </h3>
-
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              {search
-                ? "No approved student matches your search. Try another name, mobile number, email or course."
-                : "Students will automatically appear here after their admission application is approved from the Admissions section."}
-            </p>
-
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="mt-5 rounded-xl bg-green-700 px-5 py-3 text-sm font-bold text-white hover:bg-green-800"
-              >
-                Clear Search
-              </button>
-            )}
-          </div>
-        )}
+          )}
 
         {/* STUDENT LIST */}
         {!loading && filteredStudents.length > 0 && (
@@ -351,8 +381,8 @@ export default function StudentsPage() {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Showing {filteredStudents.length} of {students.length} approved
-                  students.
+                  Showing {filteredStudents.length} of{" "}
+                  {students.length} approved students.
                 </p>
               </div>
             </div>
@@ -367,13 +397,19 @@ export default function StudentsPage() {
                     {/* STUDENT INFO */}
                     <div className="flex min-w-0 items-start gap-4">
                       <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-green-100 text-xl font-extrabold text-green-800">
-                        {getInitials(student.student_name)}
+                        {getInitials(
+                          student.student_name
+                        )}
                       </div>
 
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-green-800">
-                            Student #{getStudentNumber(student, index)}
+                            Student #
+                            {getStudentNumber(
+                              student,
+                              index
+                            )}
                           </span>
 
                           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
@@ -382,7 +418,8 @@ export default function StudentsPage() {
                         </div>
 
                         <h3 className="mt-3 break-words text-2xl font-extrabold text-slate-900">
-                          {student.student_name || "Student Name Not Available"}
+                          {student.student_name ||
+                            "Student Name Not Available"}
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-500">
@@ -398,7 +435,9 @@ export default function StudentsPage() {
                     <div className="flex flex-wrap gap-3">
                       <button
                         type="button"
-                        onClick={() => setSelectedStudent(student)}
+                        onClick={() =>
+                          setSelectedStudent(student)
+                        }
                         className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
                       >
                         👁 View Full Details
@@ -415,10 +454,9 @@ export default function StudentsPage() {
 
                       {student.mobile && (
                         <a
-                          href={`https://wa.me/${String(student.mobile).replace(
-                            /\D/g,
-                            ""
-                          )}`}
+                          href={`https://wa.me/${String(
+                            student.mobile
+                          ).replace(/\D/g, "")}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-700"
@@ -437,7 +475,8 @@ export default function StudentsPage() {
                       </p>
 
                       <p className="mt-2 break-words font-bold text-slate-800">
-                        {student.guardian_name || "—"}
+                        {student.guardian_name ||
+                          "—"}
                       </p>
                     </div>
 
@@ -467,7 +506,9 @@ export default function StudentsPage() {
                       </p>
 
                       <p className="mt-2 font-bold text-slate-800">
-                        {formatDate(student.created_at)}
+                        {formatDate(
+                          student.created_at
+                        )}
                       </p>
                     </div>
                   </div>
@@ -482,11 +523,15 @@ export default function StudentsPage() {
       {selectedStudent && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
-          onClick={() => setSelectedStudent(null)}
+          onClick={() =>
+            setSelectedStudent(null)
+          }
         >
           <div
             className="relative max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
             {/* MODAL HEADER */}
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gradient-to-r from-green-950 to-green-700 px-6 py-6 text-white md:px-8">
@@ -496,7 +541,8 @@ export default function StudentsPage() {
                 </p>
 
                 <h2 className="mt-2 text-2xl font-extrabold md:text-3xl">
-                  {selectedStudent.student_name || "Student"}
+                  {selectedStudent.student_name ||
+                    "Student"}
                 </h2>
 
                 <p className="mt-1 text-sm text-green-100">
@@ -506,7 +552,9 @@ export default function StudentsPage() {
 
               <button
                 type="button"
-                onClick={() => setSelectedStudent(null)}
+                onClick={() =>
+                  setSelectedStudent(null)
+                }
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-2xl font-light text-white transition hover:bg-white/25"
                 aria-label="Close"
               >
@@ -519,12 +567,15 @@ export default function StudentsPage() {
               {/* PROFILE TOP */}
               <div className="flex flex-col gap-5 rounded-2xl border border-green-100 bg-green-50 p-5 sm:flex-row sm:items-center">
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-green-700 text-2xl font-extrabold text-white">
-                  {getInitials(selectedStudent.student_name)}
+                  {getInitials(
+                    selectedStudent.student_name
+                  )}
                 </div>
 
                 <div className="min-w-0">
                   <h3 className="break-words text-2xl font-extrabold text-slate-900">
-                    {selectedStudent.student_name || "—"}
+                    {selectedStudent.student_name ||
+                      "—"}
                   </h3>
 
                   <p className="mt-1 break-all text-sm text-slate-500">
@@ -546,12 +597,16 @@ export default function StudentsPage() {
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <DetailBox
                     label="Student Full Name"
-                    value={selectedStudent.student_name}
+                    value={
+                      selectedStudent.student_name
+                    }
                   />
 
                   <DetailBox
                     label="Father / Guardian Name"
-                    value={selectedStudent.guardian_name}
+                    value={
+                      selectedStudent.guardian_name
+                    }
                   />
 
                   <DetailBox
@@ -577,17 +632,21 @@ export default function StudentsPage() {
 
                   <DetailBox
                     label="Admission Submitted"
-                    value={formatDateTime(selectedStudent.created_at)}
+                    value={formatDateTime(
+                      selectedStudent.created_at
+                    )}
                   />
 
                   <DetailBox
                     label="Last Updated"
-                    value={formatDateTime(selectedStudent.updated_at)}
+                    value={formatDateTime(
+                      selectedStudent.updated_at
+                    )}
                   />
                 </div>
               </section>
 
-              {/* ACTIONS */}
+              {/* QUICK ACTIONS */}
               <section className="mt-7">
                 <h3 className="text-lg font-extrabold text-slate-900">
                   Quick Actions
@@ -634,8 +693,10 @@ export default function StudentsPage() {
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Attendance, class details, fees, documents, address and other
-                  student records can be added here in the next stage.
+                  Attendance, class details, fees,
+                  documents, address and other student
+                  records can be added here in the next
+                  stage.
                 </p>
               </section>
             </div>
@@ -647,7 +708,6 @@ export default function StudentsPage() {
 }
 
 /* DETAIL BOX */
-
 function DetailBox({
   label,
   value,
@@ -665,7 +725,9 @@ function DetailBox({
 
       <p
         className={`mt-2 break-words font-bold ${
-          green ? "text-green-700" : "text-slate-800"
+          green
+            ? "text-green-700"
+            : "text-slate-800"
         }`}
       >
         {value || "—"}
