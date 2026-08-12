@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase/client";
+import { supabase } from "../../../lib/supabase/client";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function AdminDashboardPage() {
   const [enquiryCount, setEnquiryCount] = useState(0);
   const [studentCount, setStudentCount] = useState(0);
   const [noticeCount, setNoticeCount] = useState(0);
+  const [teacherCount, setTeacherCount] = useState(0);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -53,9 +54,7 @@ export default function AdminDashboardPage() {
             admissionsError.message
           );
         } else {
-          setAdmissionCount(
-            admissionsCount || 0
-          );
+          setAdmissionCount(admissionsCount || 0);
         }
 
         // ==========================================
@@ -79,9 +78,7 @@ export default function AdminDashboardPage() {
             enquiriesError.message
           );
         } else {
-          setEnquiryCount(
-            enquiriesCount || 0
-          );
+          setEnquiryCount(enquiriesCount || 0);
         }
 
         // ==========================================
@@ -105,9 +102,7 @@ export default function AdminDashboardPage() {
             approvedStudentsError.message
           );
         } else {
-          setStudentCount(
-            approvedStudentsCount || 0
-          );
+          setStudentCount(approvedStudentsCount || 0);
         }
 
         // ==========================================
@@ -130,9 +125,31 @@ export default function AdminDashboardPage() {
             noticesError.message
           );
         } else {
-          setNoticeCount(
-            noticesCount || 0
+          setNoticeCount(noticesCount || 0);
+        }
+
+        // ==========================================
+        // TOTAL ACTIVE TEACHERS
+        // ==========================================
+
+        const {
+          count: teachersCount,
+          error: teachersError,
+        } = await supabase
+          .from("teachers")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
+          .eq("active", true);
+
+        if (teachersError) {
+          console.error(
+            "Teachers count error:",
+            teachersError.message
           );
+        } else {
+          setTeacherCount(teachersCount || 0);
         }
 
         setLoading(false);
@@ -233,7 +250,7 @@ export default function AdminDashboardPage() {
             DASHBOARD CARDS
         ========================================== */}
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {/* ========================================
               ADMISSIONS
           ======================================== */}
@@ -315,6 +332,44 @@ export default function AdminDashboardPage() {
               className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Students →
+            </button>
+          </div>
+
+          {/* ========================================
+              TEACHERS
+          ======================================== */}
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-2xl">
+              👨‍🏫
+            </div>
+
+            <h3 className="mt-5 text-lg font-bold text-gray-900">
+              Teachers
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Add, edit, delete and manage madrasa teachers.
+            </p>
+
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-2xl font-black text-indigo-600">
+                {teacherCount}
+              </span>
+
+              <span className="text-xs font-semibold text-gray-400">
+                Active Teachers
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                router.push("/admin/teachers")
+              }
+              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+            >
+              Manage Teachers →
             </button>
           </div>
 
@@ -406,7 +461,7 @@ export default function AdminDashboardPage() {
             </button>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {/* TOTAL STUDENTS */}
 
             <div className="rounded-xl bg-gray-50 p-5">
@@ -445,6 +500,28 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-blue-700">
                 {enquiryCount}
               </p>
+            </div>
+
+            {/* TOTAL TEACHERS */}
+
+            <div className="rounded-xl bg-gray-50 p-5">
+              <p className="text-sm text-gray-500">
+                Active Teachers
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-indigo-700">
+                {teacherCount}
+              </p>
+
+              <button
+                type="button"
+                onClick={() =>
+                  router.push("/admin/teachers")
+                }
+                className="mt-2 text-xs font-bold text-green-700 hover:text-green-900"
+              >
+                Manage →
+              </button>
             </div>
 
             {/* TOTAL NOTICES */}
