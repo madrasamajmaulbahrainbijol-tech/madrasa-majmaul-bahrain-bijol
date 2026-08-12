@@ -9,7 +9,9 @@ if (!supabaseUrl) {
 }
 
 if (!supabasePublishableKey) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  throw new Error(
+    "Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+  );
 }
 
 export const supabase = createClient(
@@ -21,9 +23,13 @@ export const supabase = createClient(
    NOTICE IMAGE UPLOAD
 ========================================================= */
 
-export async function uploadNoticeImage(file: File): Promise<string> {
+export async function uploadNoticeImage(
+  file: File
+): Promise<string> {
   if (!file) {
-    throw new Error("Image file select nahi ki gayi.");
+    throw new Error(
+      "Image file select nahi ki gayi."
+    );
   }
 
   const allowedTypes = [
@@ -43,11 +49,14 @@ export async function uploadNoticeImage(file: File): Promise<string> {
   const maxSize = 5 * 1024 * 1024;
 
   if (file.size > maxSize) {
-    throw new Error("Image maximum 5MB ki honi chahiye.");
+    throw new Error(
+      "Image maximum 5MB ki honi chahiye."
+    );
   }
 
   const extension =
-    file.name.split(".").pop()?.toLowerCase() || "jpg";
+    file.name.split(".").pop()?.toLowerCase() ||
+    "jpg";
 
   const fileName = `${Date.now()}-${Math.random()
     .toString(36)
@@ -55,30 +64,66 @@ export async function uploadNoticeImage(file: File): Promise<string> {
 
   const filePath = `notices/${fileName}`;
 
-  const { error } = await supabase.storage
-    .from("notice-images")
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type,
-    });
+  console.log(
+    "Uploading notice image:",
+    filePath
+  );
 
-  if (error) {
-    console.error("Notice image upload error:", error);
+  /* =======================================================
+     UPLOAD TO SUPABASE STORAGE
+  ======================================================= */
+
+  const { data: uploadData, error: uploadError } =
+    await supabase.storage
+      .from("notice-images")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+
+  if (uploadError) {
+    console.error(
+      "Notice image upload error:",
+      uploadError
+    );
+
     throw new Error(
-      error.message || "Notice image upload nahi ho saki."
+      uploadError.message ||
+        "Notice image upload nahi ho saki."
     );
   }
 
-  const { data } = supabase.storage
+  console.log(
+    "Notice image uploaded successfully:",
+    uploadData
+  );
+
+  /* =======================================================
+     GET PUBLIC URL
+  ======================================================= */
+
+  const {
+    data: publicUrlData,
+  } = supabase.storage
     .from("notice-images")
     .getPublicUrl(filePath);
 
-  if (!data?.publicUrl) {
-    throw new Error("Uploaded image ka public URL nahi mila.");
+  const publicUrl =
+    publicUrlData?.publicUrl || "";
+
+  console.log(
+    "Generated notice image URL:",
+    publicUrl
+  );
+
+  if (!publicUrl) {
+    throw new Error(
+      "Uploaded image ka public URL nahi mila."
+    );
   }
 
-  return data.publicUrl;
+  return publicUrl;
 }
 
 /* =========================================================
@@ -93,37 +138,57 @@ export async function deleteNoticeImage(
   }
 
   try {
-    const marker = "/storage/v1/object/public/notice-images/";
+    const marker =
+      "/storage/v1/object/public/notice-images/";
 
-    const markerIndex = imageUrl.indexOf(marker);
+    const markerIndex =
+      imageUrl.indexOf(marker);
 
     if (markerIndex === -1) {
       console.warn(
         "Notice image URL notice-images bucket se match nahi hui."
       );
+
       return;
     }
 
     const filePath = decodeURIComponent(
-      imageUrl.substring(markerIndex + marker.length)
+      imageUrl.substring(
+        markerIndex + marker.length
+      )
     );
 
     if (!filePath) {
       return;
     }
 
-    const { error } = await supabase.storage
-      .from("notice-images")
-      .remove([filePath]);
+    console.log(
+      "Deleting notice image:",
+      filePath
+    );
+
+    const { error } =
+      await supabase.storage
+        .from("notice-images")
+        .remove([filePath]);
 
     if (error) {
-      console.error("Notice image delete error:", error);
+      console.error(
+        "Notice image delete error:",
+        error
+      );
+
       throw new Error(
-        error.message || "Notice image delete nahi ho saki."
+        error.message ||
+          "Notice image delete nahi ho saki."
       );
     }
   } catch (error) {
-    console.error("deleteNoticeImage error:", error);
+    console.error(
+      "deleteNoticeImage error:",
+      error
+    );
+
     throw error;
   }
 }
