@@ -13,11 +13,15 @@ export default function AdminDashboardPage() {
   const [admissionCount, setAdmissionCount] = useState(0);
   const [enquiryCount, setEnquiryCount] = useState(0);
   const [studentCount, setStudentCount] = useState(0);
+  const [noticeCount, setNoticeCount] = useState(0);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        // Check logged-in admin
+        // ==========================================
+        // CHECK LOGGED-IN ADMIN
+        // ==========================================
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -32,12 +36,16 @@ export default function AdminDashboardPage() {
         // ==========================================
         // TOTAL ADMISSION APPLICATIONS
         // ==========================================
+
         const {
           count: admissionsCount,
           error: admissionsError,
         } = await supabase
           .from("admissions")
-          .select("*", { count: "exact", head: true });
+          .select("*", {
+            count: "exact",
+            head: true,
+          });
 
         if (admissionsError) {
           console.error(
@@ -45,18 +53,24 @@ export default function AdminDashboardPage() {
             admissionsError.message
           );
         } else {
-          setAdmissionCount(admissionsCount || 0);
+          setAdmissionCount(
+            admissionsCount || 0
+          );
         }
 
         // ==========================================
         // NEW ENQUIRIES
         // ==========================================
+
         const {
           count: enquiriesCount,
           error: enquiriesError,
         } = await supabase
           .from("enquiries")
-          .select("*", { count: "exact", head: true })
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
           .eq("status", "new");
 
         if (enquiriesError) {
@@ -65,19 +79,24 @@ export default function AdminDashboardPage() {
             enquiriesError.message
           );
         } else {
-          setEnquiryCount(enquiriesCount || 0);
+          setEnquiryCount(
+            enquiriesCount || 0
+          );
         }
 
         // ==========================================
-        // TOTAL STUDENTS
-        // ONLY APPROVED ADMISSIONS
+        // TOTAL APPROVED STUDENTS
         // ==========================================
+
         const {
           count: approvedStudentsCount,
           error: approvedStudentsError,
         } = await supabase
           .from("admissions")
-          .select("*", { count: "exact", head: true })
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
           .eq("status", "approved");
 
         if (approvedStudentsError) {
@@ -86,12 +105,43 @@ export default function AdminDashboardPage() {
             approvedStudentsError.message
           );
         } else {
-          setStudentCount(approvedStudentsCount || 0);
+          setStudentCount(
+            approvedStudentsCount || 0
+          );
+        }
+
+        // ==========================================
+        // TOTAL NOTICES
+        // ==========================================
+
+        const {
+          count: noticesCount,
+          error: noticesError,
+        } = await supabase
+          .from("notices")
+          .select("*", {
+            count: "exact",
+            head: true,
+          });
+
+        if (noticesError) {
+          console.error(
+            "Notices count error:",
+            noticesError.message
+          );
+        } else {
+          setNoticeCount(
+            noticesCount || 0
+          );
         }
 
         setLoading(false);
       } catch (error) {
-        console.error("Dashboard loading error:", error);
+        console.error(
+          "Dashboard loading error:",
+          error
+        );
+
         setLoading(false);
       }
     }
@@ -102,8 +152,10 @@ export default function AdminDashboardPage() {
   // ==========================================
   // LOGOUT
   // ==========================================
+
   async function handleLogout() {
     await supabase.auth.signOut();
+
     router.replace("/admin");
     router.refresh();
   }
@@ -111,6 +163,7 @@ export default function AdminDashboardPage() {
   // ==========================================
   // LOADING SCREEN
   // ==========================================
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -127,13 +180,12 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-
       {/* ==========================================
           HEADER
       ========================================== */}
+
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-
           <div>
             <p className="text-sm font-semibold text-green-700">
               Madrasa Majmaul Bahrain Bijol
@@ -151,20 +203,19 @@ export default function AdminDashboardPage() {
           >
             Logout
           </button>
-
         </div>
       </header>
 
       {/* ==========================================
           MAIN CONTENT
       ========================================== */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* ==========================================
             WELCOME
         ========================================== */}
-        <div className="rounded-2xl bg-gradient-to-r from-green-700 to-green-600 p-6 text-white shadow-lg">
 
+        <div className="rounded-2xl bg-gradient-to-r from-green-700 to-green-600 p-6 text-white shadow-lg">
           <p className="text-sm font-medium text-green-100">
             Welcome back
           </p>
@@ -176,17 +227,18 @@ export default function AdminDashboardPage() {
           <p className="mt-2 text-sm text-green-100">
             Logged in as: {email}
           </p>
-
         </div>
 
         {/* ==========================================
             DASHBOARD CARDS
         ========================================== */}
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 
-          {/* ADMISSIONS */}
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {/* ========================================
+              ADMISSIONS
+          ======================================== */}
+
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl">
               🎓
             </div>
@@ -201,17 +253,20 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() => router.push("/admin/admissions")}
+              onClick={() =>
+                router.push("/admin/admissions")
+              }
               className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Admissions →
             </button>
-
           </div>
 
-          {/* ENQUIRIES */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+          {/* ========================================
+              ENQUIRIES
+          ======================================== */}
 
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-2xl">
               📩
             </div>
@@ -226,17 +281,20 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() => router.push("/admin/enquiries")}
+              onClick={() =>
+                router.push("/admin/enquiries")
+              }
               className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Enquiries →
             </button>
-
           </div>
 
-          {/* STUDENTS */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+          {/* ========================================
+              STUDENTS
+          ======================================== */}
 
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-2xl">
               👨‍🎓
             </div>
@@ -251,17 +309,58 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() => router.push("/admin/students")}
+              onClick={() =>
+                router.push("/admin/students")
+              }
               className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Students →
             </button>
-
           </div>
 
-          {/* WEBSITE */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+          {/* ========================================
+              NOTICES
+          ======================================== */}
 
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-2xl">
+              📢
+            </div>
+
+            <h3 className="mt-5 text-lg font-bold text-gray-900">
+              Notices
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Create, edit and publish madrasa notices.
+            </p>
+
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-2xl font-black text-amber-600">
+                {noticeCount}
+              </span>
+
+              <span className="text-xs font-semibold text-gray-400">
+                Total Notices
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                router.push("/admin/notices")
+              }
+              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+            >
+              Manage Notices →
+            </button>
+          </div>
+
+          {/* ========================================
+              WEBSITE
+          ======================================== */}
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
               🌐
             </div>
@@ -276,42 +375,41 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() => router.push("/")}
+              onClick={() =>
+                router.push("/")
+              }
               className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Open Website →
             </button>
-
           </div>
-
         </div>
 
         {/* ==========================================
             QUICK INFORMATION
         ========================================== */}
+
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-
           <div className="flex items-center justify-between">
-
             <h3 className="text-xl font-bold text-gray-900">
               Quick Information
             </h3>
 
             <button
               type="button"
-              onClick={() => window.location.reload()}
+              onClick={() =>
+                window.location.reload()
+              }
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
             >
               Refresh
             </button>
-
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* TOTAL STUDENTS */}
 
-            {/* TOTAL APPROVED STUDENTS */}
             <div className="rounded-xl bg-gray-50 p-5">
-
               <p className="text-sm text-gray-500">
                 Total Students
               </p>
@@ -323,12 +421,11 @@ export default function AdminDashboardPage() {
               <p className="mt-1 text-xs text-gray-400">
                 Approved admissions only
               </p>
-
             </div>
 
             {/* ADMISSION APPLICATIONS */}
-            <div className="rounded-xl bg-gray-50 p-5">
 
+            <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">
                 Admission Applications
               </p>
@@ -336,12 +433,11 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-green-700">
                 {admissionCount}
               </p>
-
             </div>
 
             {/* NEW ENQUIRIES */}
-            <div className="rounded-xl bg-gray-50 p-5">
 
+            <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">
                 New Enquiries
               </p>
@@ -349,33 +445,50 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-blue-700">
                 {enquiryCount}
               </p>
-
             </div>
 
-          </div>
+            {/* TOTAL NOTICES */}
 
+            <div className="rounded-xl bg-gray-50 p-5">
+              <p className="text-sm text-gray-500">
+                Total Notices
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-amber-600">
+                {noticeCount}
+              </p>
+
+              <button
+                type="button"
+                onClick={() =>
+                  router.push("/admin/notices")
+                }
+                className="mt-2 text-xs font-bold text-green-700 hover:text-green-900"
+              >
+                Manage →
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* ==========================================
             SYSTEM STATUS
         ========================================== */}
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="text-xl font-bold text-gray-900">
             System Status
           </h3>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-
             {/* ADMIN LOGIN */}
-            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
 
+            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
 
               <div>
-
                 <p className="font-bold text-green-800">
                   Admin Login
                 </p>
@@ -383,20 +496,17 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-green-700">
                   Active
                 </p>
-
               </div>
-
             </div>
 
             {/* SUPABASE */}
-            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
 
+            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
 
               <div>
-
                 <p className="font-bold text-green-800">
                   Supabase
                 </p>
@@ -404,20 +514,17 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-green-700">
                   Connected
                 </p>
-
               </div>
-
             </div>
 
             {/* WEBSITE */}
-            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
 
+            <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
 
               <div>
-
                 <p className="font-bold text-green-800">
                   Website
                 </p>
@@ -425,17 +532,11 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-green-700">
                   Online
                 </p>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
-
     </main>
   );
 }
