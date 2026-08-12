@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
         }
 
         // ==========================================
-        // TOTAL ACTIVE TEACHERS
+        // TOTAL TEACHERS
         // ==========================================
 
         const {
@@ -140,8 +140,7 @@ export default function AdminDashboardPage() {
           .select("*", {
             count: "exact",
             head: true,
-          })
-          .eq("active", true);
+          });
 
         if (teachersError) {
           console.error(
@@ -250,7 +249,7 @@ export default function AdminDashboardPage() {
             DASHBOARD CARDS
         ========================================== */}
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {/* ========================================
               ADMISSIONS
           ======================================== */}
@@ -268,12 +267,22 @@ export default function AdminDashboardPage() {
               Manage student admission applications.
             </p>
 
+            <div className="mt-4">
+              <span className="text-2xl font-black text-green-700">
+                {admissionCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Total
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={() =>
                 router.push("/admin/admissions")
               }
-              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Admissions →
             </button>
@@ -296,12 +305,22 @@ export default function AdminDashboardPage() {
               View and manage website enquiries.
             </p>
 
+            <div className="mt-4">
+              <span className="text-2xl font-black text-blue-700">
+                {enquiryCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                New
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={() =>
                 router.push("/admin/enquiries")
               }
-              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Enquiries →
             </button>
@@ -324,12 +343,22 @@ export default function AdminDashboardPage() {
               Manage approved students and their records.
             </p>
 
+            <div className="mt-4">
+              <span className="text-2xl font-black text-purple-700">
+                {studentCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Approved
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={() =>
                 router.push("/admin/students")
               }
-              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Students →
             </button>
@@ -352,13 +381,13 @@ export default function AdminDashboardPage() {
               Add, edit, delete and manage madrasa teachers.
             </p>
 
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-2xl font-black text-indigo-600">
+            <div className="mt-4">
+              <span className="text-2xl font-black text-indigo-700">
                 {teacherCount}
               </span>
 
-              <span className="text-xs font-semibold text-gray-400">
-                Active Teachers
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Total Teachers
               </span>
             </div>
 
@@ -390,12 +419,12 @@ export default function AdminDashboardPage() {
               Create, edit and publish madrasa notices.
             </p>
 
-            <div className="mt-4 flex items-center gap-2">
+            <div className="mt-4">
               <span className="text-2xl font-black text-amber-600">
                 {noticeCount}
               </span>
 
-              <span className="text-xs font-semibold text-gray-400">
+              <span className="ml-2 text-xs font-semibold text-gray-400">
                 Total Notices
               </span>
             </div>
@@ -408,34 +437,6 @@ export default function AdminDashboardPage() {
               className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Manage Notices →
-            </button>
-          </div>
-
-          {/* ========================================
-              WEBSITE
-          ======================================== */}
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
-              🌐
-            </div>
-
-            <h3 className="mt-5 text-lg font-bold text-gray-900">
-              Website
-            </h3>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Quickly access the public madrasa website.
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                router.push("/")
-              }
-              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
-            >
-              Open Website →
             </button>
           </div>
         </div>
@@ -506,7 +507,7 @@ export default function AdminDashboardPage() {
 
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">
-                Active Teachers
+                Total Teachers
               </p>
 
               <p className="mt-2 text-3xl font-bold text-indigo-700">
