@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   supabase,
   uploadNoticeImage,
   deleteNoticeImage,
-} from "@/lib/supabase";
+} from "../../lib/supabase";
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 type Notice = {
   id: string;
@@ -28,99 +37,223 @@ type NoticeForm = {
   published: boolean;
 };
 
-const emptyForm: NoticeForm = {
+type FilterType =
+  | "all"
+  | "published"
+  | "draft"
+  | "important";
+
+/* =========================================================
+   DEFAULT FORM
+========================================================= */
+
+const getToday = () => {
+  return new Date().toISOString().split("T")[0];
+};
+
+const getEmptyForm = (): NoticeForm => ({
   title: "",
   description: "",
-  notice_date: new Date().toISOString().split("T")[0],
+  notice_date: getToday(),
   image_url: "",
   important: false,
   published: true,
-};
+});
+
+/* =========================================================
+   MAIN PAGE
+========================================================= */
 
 export default function NoticesAdminPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
-  const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
+  const [editingNotice, setEditingNotice] =
+    useState<Notice | null>(null);
 
-  const [form, setForm] = useState<NoticeForm>(emptyForm);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [form, setForm] = useState<NoticeForm>(
+    getEmptyForm()
+  );
+
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null);
+
+  const [previewUrl, setPreviewUrl] =
+    useState<string>("");
 
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<
-    "all" | "published" | "draft" | "important"
-  >("all");
+
+  const [filter, setFilter] =
+    useState<FilterType>("all");
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  /* =======================================================
+     LOAD NOTICES ON PAGE LOAD
+  ======================================================= */
 
   useEffect(() => {
     loadNotices();
   }, []);
 
+  /* =======================================================
+     IMAGE PREVIEW CLEANUP
+  ======================================================= */
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  /* =======================================================
+     LOAD NOTICES
+  ======================================================= */
+
   async function loadNotices() {
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase
-      .from("notices")
-      .select("*")
-      .order("notice_date", { ascending: false })
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("notices")
+        .select("*")
+        .order("notice_date", {
+          ascending: false,
+        })
+        .order("created_at", {
+          ascending: false,
+        });
 
-    if (error) {
-      console.error(error);
-      setError("Notices load nahi ho sake.");
-    } else {
+      if (error) {
+        throw error;
+      }
+
       setNotices((data || []) as Notice[]);
-    }
+    } catch (err: any) {
+      console.error(
+        "Load notices error:",
+        err
+      );
 
-    setLoading(false);
+      setError(
+        err?.message ||
+          "Notices load nahi ho sake."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
+  /* =======================================================
+     OPEN ADD FORM
+  ======================================================= */
+
   function openAddForm() {
+    clearPreview();
+
     setEditingNotice(null);
-    setForm(emptyForm);
+    setForm(getEmptyForm());
     setSelectedImage(null);
+
     setMessage("");
     setError("");
+
     setShowForm(true);
   }
 
+  /* =======================================================
+     OPEN EDIT FORM
+  ======================================================= */
+
   function openEditForm(notice: Notice) {
+    clearPreview();
+
     setEditingNotice(notice);
 
     setForm({
       title: notice.title || "",
-      description: notice.description || "",
+      description:
+        notice.description || "",
       notice_date:
-        notice.notice_date || new Date().toISOString().split("T")[0],
-      image_url: notice.image_url || "",
-      important: Boolean(notice.important),
-      published: Boolean(notice.published),
+        notice.notice_date || getToday(),
+      image_url:
+        notice.image_url || "",
+      important:
+        Boolean(notice.important),
+      published:
+        Boolean(notice.published),
     });
 
     setSelectedImage(null);
+
     setMessage("");
     setError("");
+
     setShowForm(true);
   }
 
+  /* =======================================================
+     CLEAR IMAGE PREVIEW
+  ======================================================= */
+
+  function clearPreview() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    setPreviewUrl("");
+  }
+
+  /* =======================================================
+     CLOSE FORM
+  ======================================================= */
+
   function closeForm() {
-    if (saving || uploading) return;
+    if (saving || uploading) {
+      return;
+    }
+
+    clearPreview();
 
     setShowForm(false);
     setEditingNotice(null);
-    setForm(emptyForm);
+    setForm(getEmptyForm());
     setSelectedImage(null);
+
     setMessage("");
     setError("");
   }
 
-  async function handleImageUpload() {
+  /* =======================================================
+     IMAGE SELECT
+  ======================================================= */
+
+  function handleImageSelect(
+    file: File | null
+  ) {
+    clearPreview();
+
+    setSelectedImage(file);
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  }
+
+  /* =======================================================
+     UPLOAD IMAGE
+  ======================================================= */
+
+  async function handleImageUpload(): Promise<string> {
     if (!selectedImage) {
       return form.image_url || "";
     }
@@ -129,100 +262,182 @@ export default function NoticesAdminPage() {
     setError("");
 
     try {
-      const oldImageUrl = form.image_url;
+      const oldImageUrl =
+        form.image_url;
 
-      const imageUrl = await uploadNoticeImage(selectedImage);
+      const imageUrl =
+        await uploadNoticeImage(
+          selectedImage
+        );
 
-      if (oldImageUrl && oldImageUrl !== imageUrl) {
+      if (
+        oldImageUrl &&
+        oldImageUrl !== imageUrl
+      ) {
         try {
-          await deleteNoticeImage(oldImageUrl);
+          await deleteNoticeImage(
+            oldImageUrl
+          );
         } catch (deleteError) {
-          console.warn("Old image delete failed:", deleteError);
+          console.warn(
+            "Old image delete failed:",
+            deleteError
+          );
         }
       }
 
-      setForm((prev) => ({
-        ...prev,
+      setForm((previous) => ({
+        ...previous,
         image_url: imageUrl,
       }));
 
       setSelectedImage(null);
 
+      clearPreview();
+
       return imageUrl;
-    } catch (err) {
-      console.error(err);
-      throw new Error("Image upload nahi ho saki.");
+    } catch (err: any) {
+      console.error(
+        "Image upload error:",
+        err
+      );
+
+      throw new Error(
+        err?.message ||
+          "Image upload nahi ho saki."
+      );
     } finally {
       setUploading(false);
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  /* =======================================================
+     SAVE NOTICE
+  ======================================================= */
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
     setError("");
     setMessage("");
 
-    if (!form.title.trim()) {
-      setError("Notice title zaroor likhein.");
+    const title =
+      form.title.trim();
+
+    const description =
+      form.description.trim();
+
+    if (!title) {
+      setError(
+        "Notice title zaroor likhein."
+      );
       return;
     }
 
-    if (!form.description.trim()) {
-      setError("Notice description zaroor likhein.");
+    if (!description) {
+      setError(
+        "Notice description zaroor likhein."
+      );
+      return;
+    }
+
+    if (title.length > 200) {
+      setError(
+        "Notice title maximum 200 characters ka hona chahiye."
+      );
       return;
     }
 
     setSaving(true);
 
     try {
-      let finalImageUrl = form.image_url;
+      let finalImageUrl =
+        form.image_url;
+
+      /* Upload new image if selected */
 
       if (selectedImage) {
-        finalImageUrl = await handleImageUpload();
+        finalImageUrl =
+          await handleImageUpload();
       }
 
+      const now =
+        new Date().toISOString();
+
       const noticeData = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        notice_date: form.notice_date || null,
-        image_url: finalImageUrl || null,
-        important: form.important,
-        published: form.published,
-        updated_at: new Date().toISOString(),
+        title,
+        description,
+        notice_date:
+          form.notice_date || null,
+        image_url:
+          finalImageUrl || null,
+        important:
+          Boolean(form.important),
+        published:
+          Boolean(form.published),
+        updated_at: now,
       };
 
+      /* UPDATE */
+
       if (editingNotice) {
-        const { error } = await supabase
+        const {
+          error: updateError,
+        } = await supabase
           .from("notices")
           .update(noticeData)
-          .eq("id", editingNotice.id);
+          .eq(
+            "id",
+            editingNotice.id
+          );
 
-        if (error) {
-          throw error;
+        if (updateError) {
+          throw updateError;
         }
 
-        setMessage("Notice successfully update ho gaya.");
-      } else {
-        const { error } = await supabase.from("notices").insert({
-          ...noticeData,
-          created_at: new Date().toISOString(),
-        });
+        setMessage(
+          "Notice successfully update ho gaya."
+        );
+      }
 
-        if (error) {
-          throw error;
+      /* INSERT */
+
+      else {
+        const {
+          error: insertError,
+        } = await supabase
+          .from("notices")
+          .insert({
+            ...noticeData,
+            created_at: now,
+          });
+
+        if (insertError) {
+          throw insertError;
         }
 
-        setMessage("New notice successfully add ho gaya.");
+        setMessage(
+          "New notice successfully add ho gaya."
+        );
       }
 
       await loadNotices();
 
       setTimeout(() => {
-        closeForm();
-      }, 700);
+        setShowForm(false);
+        setEditingNotice(null);
+        setForm(getEmptyForm());
+        setSelectedImage(null);
+        clearPreview();
+        setMessage("");
+      }, 900);
     } catch (err: any) {
-      console.error(err);
+      console.error(
+        "Save notice error:",
+        err
+      );
 
       setError(
         err?.message ||
@@ -233,129 +448,263 @@ export default function NoticesAdminPage() {
     }
   }
 
-  async function handleDelete(notice: Notice) {
-    const confirmed = window.confirm(
-      `Kya aap "${notice.title}" notice ko permanently delete karna chahte hain?`
-    );
+  /* =======================================================
+     DELETE NOTICE
+  ======================================================= */
 
-    if (!confirmed) return;
+  async function handleDelete(
+    notice: Notice
+  ) {
+    const confirmed =
+      window.confirm(
+        `Kya aap "${notice.title}" notice ko permanently delete karna chahte hain?`
+      );
+
+    if (!confirmed) {
+      return;
+    }
 
     setError("");
     setMessage("");
 
     try {
-      const { error } = await supabase
+      const {
+        error: deleteError,
+      } = await supabase
         .from("notices")
         .delete()
         .eq("id", notice.id);
 
-      if (error) {
-        throw error;
+      if (deleteError) {
+        throw deleteError;
       }
 
       if (notice.image_url) {
         try {
-          await deleteNoticeImage(notice.image_url);
+          await deleteNoticeImage(
+            notice.image_url
+          );
         } catch (imageError) {
-          console.warn("Notice image delete failed:", imageError);
+          console.warn(
+            "Notice image delete failed:",
+            imageError
+          );
         }
       }
 
-      setMessage("Notice delete ho gaya.");
+      setMessage(
+        "Notice delete ho gaya."
+      );
+
       await loadNotices();
     } catch (err: any) {
-      console.error(err);
+      console.error(
+        "Delete notice error:",
+        err
+      );
 
       setError(
-        err?.message || "Notice delete nahi ho saka."
+        err?.message ||
+          "Notice delete nahi ho saka."
       );
     }
   }
 
-  async function togglePublished(notice: Notice) {
+  /* =======================================================
+     PUBLISH / UNPUBLISH
+  ======================================================= */
+
+  async function togglePublished(
+    notice: Notice
+  ) {
     setError("");
     setMessage("");
 
-    const { error } = await supabase
-      .from("notices")
-      .update({
-        published: !notice.published,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", notice.id);
+    try {
+      const {
+        error: updateError,
+      } = await supabase
+        .from("notices")
+        .update({
+          published:
+            !notice.published,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq("id", notice.id);
 
-    if (error) {
-      console.error(error);
-      setError("Notice status update nahi ho saka.");
-      return;
+      if (updateError) {
+        throw updateError;
+      }
+
+      setMessage(
+        notice.published
+          ? "Notice unpublish ho gaya."
+          : "Notice publish ho gaya."
+      );
+
+      await loadNotices();
+    } catch (err: any) {
+      console.error(
+        "Publish status error:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Notice status update nahi ho saka."
+      );
     }
-
-    await loadNotices();
   }
 
-  async function toggleImportant(notice: Notice) {
+  /* =======================================================
+     IMPORTANT TOGGLE
+  ======================================================= */
+
+  async function toggleImportant(
+    notice: Notice
+  ) {
     setError("");
     setMessage("");
 
-    const { error } = await supabase
-      .from("notices")
-      .update({
-        important: !notice.important,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", notice.id);
+    try {
+      const {
+        error: updateError,
+      } = await supabase
+        .from("notices")
+        .update({
+          important:
+            !notice.important,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq("id", notice.id);
 
-    if (error) {
-      console.error(error);
-      setError("Important status update nahi ho saka.");
-      return;
+      if (updateError) {
+        throw updateError;
+      }
+
+      setMessage(
+        notice.important
+          ? "Important status remove ho gaya."
+          : "Notice important mark ho gaya."
+      );
+
+      await loadNotices();
+    } catch (err: any) {
+      console.error(
+        "Important status error:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Important status update nahi ho saka."
+      );
     }
-
-    await loadNotices();
   }
 
-  const filteredNotices = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+  /* =======================================================
+     FILTER + SEARCH
+  ======================================================= */
 
-    return notices.filter((notice) => {
-      const matchesSearch =
-        !keyword ||
-        notice.title.toLowerCase().includes(keyword) ||
-        (notice.description || "").toLowerCase().includes(keyword);
+  const filteredNotices =
+    useMemo(() => {
+      const keyword =
+        search.trim().toLowerCase();
 
-      let matchesFilter = true;
+      return notices.filter(
+        (notice) => {
+          const title =
+            notice.title?.toLowerCase() ||
+            "";
 
-      if (filter === "published") {
-        matchesFilter = notice.published;
-      }
+          const description =
+            notice.description
+              ?.toLowerCase() || "";
 
-      if (filter === "draft") {
-        matchesFilter = !notice.published;
-      }
+          const matchesSearch =
+            !keyword ||
+            title.includes(keyword) ||
+            description.includes(
+              keyword
+            );
 
-      if (filter === "important") {
-        matchesFilter = notice.important;
-      }
+          let matchesFilter = true;
 
-      return matchesSearch && matchesFilter;
-    });
-  }, [notices, search, filter]);
+          if (
+            filter === "published"
+          ) {
+            matchesFilter =
+              notice.published;
+          }
 
-  const publishedCount = notices.filter((n) => n.published).length;
-  const draftCount = notices.filter((n) => !n.published).length;
-  const importantCount = notices.filter((n) => n.important).length;
+          if (
+            filter === "draft"
+          ) {
+            matchesFilter =
+              !notice.published;
+          }
+
+          if (
+            filter === "important"
+          ) {
+            matchesFilter =
+              notice.important;
+          }
+
+          return (
+            matchesSearch &&
+            matchesFilter
+          );
+        }
+      );
+    }, [
+      notices,
+      search,
+      filter,
+    ]);
+
+  /* =======================================================
+     STATISTICS
+  ======================================================= */
+
+  const publishedCount =
+    notices.filter(
+      (notice) =>
+        notice.published
+    ).length;
+
+  const draftCount =
+    notices.filter(
+      (notice) =>
+        !notice.published
+    ).length;
+
+  const importantCount =
+    notices.filter(
+      (notice) =>
+        notice.important
+    ).length;
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      {/* HEADER */}
+      {/* ===================================================
+          HEADER
+      =================================================== */}
+
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-emerald-700">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-700 sm:text-sm">
               Madrasa Majmaul Bahrain Bijol
             </p>
 
-            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
+            <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-4xl">
               Notice Board
             </h1>
 
@@ -373,21 +722,31 @@ export default function NoticesAdminPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        {/* TOP MESSAGE */}
+      {/* ===================================================
+          MAIN CONTENT
+      =================================================== */}
+
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        {/* SUCCESS MESSAGE */}
+
         {message && (
           <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800">
             ✓ {message}
           </div>
         )}
 
-        {error && (
+        {/* ERROR MESSAGE */}
+
+        {error && !showForm && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
             ⚠ {error}
           </div>
         )}
 
-        {/* STATS */}
+        {/* =================================================
+            STATS
+        ================================================= */}
+
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Total Notices"
@@ -417,9 +776,12 @@ export default function NoticesAdminPage() {
           />
         </section>
 
-        {/* ACTION BAR */}
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* =================================================
+            SEARCH + FILTER + ADD
+        ================================================= */}
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
             <div className="flex-1">
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Search Notices
@@ -433,35 +795,47 @@ export default function NoticesAdminPage() {
                 <input
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) =>
+                    setSearch(
+                      event.target.value
+                    )
+                  }
                   placeholder="Title ya description search karein..."
                   className="w-full rounded-xl border border-slate-300 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                 />
               </div>
             </div>
 
-            <div className="lg:w-52">
+            <div className="lg:w-56">
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Filter
               </label>
 
               <select
                 value={filter}
-                onChange={(e) =>
+                onChange={(event) =>
                   setFilter(
-                    e.target.value as
-                      | "all"
-                      | "published"
-                      | "draft"
-                      | "important"
+                    event.target
+                      .value as FilterType
                   )
                 }
                 className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
               >
-                <option value="all">All Notices</option>
-                <option value="published">Published</option>
-                <option value="draft">Drafts</option>
-                <option value="important">Important</option>
+                <option value="all">
+                  All Notices
+                </option>
+
+                <option value="published">
+                  Published
+                </option>
+
+                <option value="draft">
+                  Drafts
+                </option>
+
+                <option value="important">
+                  Important
+                </option>
               </select>
             </div>
 
@@ -475,11 +849,15 @@ export default function NoticesAdminPage() {
           </div>
         </section>
 
-        {/* NOTICE LIST */}
+        {/* =================================================
+            NOTICE LIST
+        ================================================= */}
+
         <section className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-black">
               All Notices
+
               <span className="ml-2 text-sm font-semibold text-slate-400">
                 ({filteredNotices.length})
               </span>
@@ -495,16 +873,24 @@ export default function NoticesAdminPage() {
             </button>
           </div>
 
+          {/* LOADING */}
+
           {loading ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
+
               <p className="font-semibold text-slate-500">
                 Notices load ho rahe hain...
               </p>
             </div>
-          ) : filteredNotices.length === 0 ? (
+          ) : filteredNotices.length ===
+            0 ? (
+            /* EMPTY */
+
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center">
-              <div className="text-5xl">📢</div>
+              <div className="text-5xl">
+                📢
+              </div>
 
               <h3 className="mt-4 text-xl font-black">
                 No Notices Found
@@ -517,67 +903,100 @@ export default function NoticesAdminPage() {
               <button
                 type="button"
                 onClick={openAddForm}
-                className="mt-6 rounded-xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white"
+                className="mt-6 rounded-xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-800"
               >
                 + Create First Notice
               </button>
             </div>
           ) : (
+            /* LIST */
+
             <div className="space-y-4">
-              {filteredNotices.map((notice) => (
-                <NoticeCard
-                  key={notice.id}
-                  notice={notice}
-                  onEdit={() => openEditForm(notice)}
-                  onDelete={() => handleDelete(notice)}
-                  onTogglePublished={() => togglePublished(notice)}
-                  onToggleImportant={() => toggleImportant(notice)}
-                />
-              ))}
+              {filteredNotices.map(
+                (notice) => (
+                  <NoticeCard
+                    key={notice.id}
+                    notice={notice}
+                    onEdit={() =>
+                      openEditForm(
+                        notice
+                      )
+                    }
+                    onDelete={() =>
+                      handleDelete(
+                        notice
+                      )
+                    }
+                    onTogglePublished={() =>
+                      togglePublished(
+                        notice
+                      )
+                    }
+                    onToggleImportant={() =>
+                      toggleImportant(
+                        notice
+                      )
+                    }
+                  />
+                )
+              )}
             </div>
           )}
         </section>
       </div>
 
-      {/* ADD / EDIT MODAL */}
+      {/* ===================================================
+          ADD / EDIT MODAL
+      =================================================== */}
+
       {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[95vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-4">
+          <div className="flex max-h-[96vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
             {/* MODAL HEADER */}
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 sm:py-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-700">
                   Notice Management
                 </p>
 
-                <h2 className="mt-1 text-2xl font-black">
-                  {editingNotice ? "Edit Notice" : "Add New Notice"}
+                <h2 className="mt-1 text-xl font-black sm:text-2xl">
+                  {editingNotice
+                    ? "Edit Notice"
+                    : "Add New Notice"}
                 </h2>
               </div>
 
               <button
                 type="button"
                 onClick={closeForm}
-                disabled={saving || uploading}
+                disabled={
+                  saving ||
+                  uploading
+                }
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl font-bold text-slate-600 transition hover:bg-slate-200 disabled:opacity-50"
               >
                 ×
               </button>
             </div>
 
-            {/* MODAL BODY */}
+            {/* FORM */}
+
             <form
               onSubmit={handleSubmit}
-              className="overflow-y-auto px-6 py-6"
+              className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6"
             >
+              {/* FORM ERROR */}
+
               {error && (
                 <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-                  {error}
+                  ⚠ {error}
                 </div>
               )}
 
               <div className="space-y-5">
                 {/* TITLE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Notice Title *
@@ -586,40 +1005,55 @@ export default function NoticesAdminPage() {
                   <input
                     type="text"
                     value={form.title}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       setForm({
                         ...form,
-                        title: e.target.value,
+                        title:
+                          event.target
+                            .value,
                       })
                     }
                     placeholder="Example: Annual Examination 2026"
+                    maxLength={200}
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     required
                   />
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    {form.title.length}/200
+                  </p>
                 </div>
 
                 {/* DESCRIPTION */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Notice Details *
                   </label>
 
                   <textarea
-                    value={form.description}
-                    onChange={(e) =>
+                    value={
+                      form.description
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       setForm({
                         ...form,
-                        description: e.target.value,
+                        description:
+                          event.target
+                            .value,
                       })
                     }
                     placeholder="Notice ki complete details yahan likhein..."
-                    rows={7}
-                    className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    rows={8}
+                    className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     required
                   />
                 </div>
 
                 {/* DATE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Notice Date
@@ -627,11 +1061,17 @@ export default function NoticesAdminPage() {
 
                   <input
                     type="date"
-                    value={form.notice_date}
-                    onChange={(e) =>
+                    value={
+                      form.notice_date
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       setForm({
                         ...form,
-                        notice_date: e.target.value,
+                        notice_date:
+                          event.target
+                            .value,
                       })
                     }
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 sm:w-auto"
@@ -639,76 +1079,110 @@ export default function NoticesAdminPage() {
                 </div>
 
                 {/* IMAGE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Notice Image
                   </label>
 
-                  <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-5">
+                  <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5">
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        setSelectedImage(file);
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={(
+                        event
+                      ) => {
+                        const file =
+                          event.target
+                            .files?.[0] ||
+                          null;
+
+                        handleImageSelect(
+                          file
+                        );
                       }}
                       className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-100 file:px-4 file:py-2 file:font-bold file:text-emerald-800 hover:file:bg-emerald-200"
                     />
 
-                    <p className="mt-2 text-xs text-slate-500">
-                      JPG, PNG, WEBP etc. — image Supabase Storage ke
-                      notice-images bucket mein upload hogi.
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      JPG, PNG, WEBP, GIF — maximum 5MB.
                     </p>
+
+                    {/* SELECTED IMAGE */}
 
                     {selectedImage && (
                       <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
-                        ✓ New image selected: {selectedImage.name}
+                        ✓ New image selected:
+                        <span className="ml-1 break-all">
+                          {
+                            selectedImage.name
+                          }
+                        </span>
                       </div>
                     )}
 
-                    {form.image_url && !selectedImage && (
-                      <div className="mt-5">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                          Current Image
-                        </p>
+                    {/* NEW PREVIEW */}
 
-                        <img
-                          src={form.image_url}
-                          alt="Current notice"
-                          className="max-h-60 w-full rounded-xl border border-slate-200 object-contain bg-white"
-                        />
-                      </div>
-                    )}
+                    {selectedImage &&
+                      previewUrl && (
+                        <div className="mt-5">
+                          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                            New Image Preview
+                          </p>
 
-                    {selectedImage && (
-                      <div className="mt-5">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                          New Image Preview
-                        </p>
+                          <img
+                            src={
+                              previewUrl
+                            }
+                            alt="New notice preview"
+                            className="max-h-72 w-full rounded-xl border border-slate-200 bg-white object-contain"
+                          />
+                        </div>
+                      )}
 
-                        <img
-                          src={URL.createObjectURL(selectedImage)}
-                          alt="New notice preview"
-                          className="max-h-60 w-full rounded-xl border border-slate-200 object-contain bg-white"
-                        />
-                      </div>
-                    )}
+                    {/* CURRENT IMAGE */}
+
+                    {form.image_url &&
+                      !selectedImage && (
+                        <div className="mt-5">
+                          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                            Current Image
+                          </p>
+
+                          <img
+                            src={
+                              form.image_url
+                            }
+                            alt="Current notice"
+                            className="max-h-72 w-full rounded-xl border border-slate-200 bg-white object-contain"
+                          />
+                        </div>
+                      )}
                   </div>
                 </div>
 
                 {/* OPTIONS */}
+
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  {/* IMPORTANT */}
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-red-200 hover:bg-red-50">
                     <input
                       type="checkbox"
-                      checked={form.important}
-                      onChange={(e) =>
+                      checked={
+                        form.important
+                      }
+                      onChange={(
+                        event
+                      ) =>
                         setForm({
                           ...form,
-                          important: e.target.checked,
+                          important:
+                            event.target
+                              .checked,
                         })
                       }
-                      className="h-5 w-5 accent-emerald-700"
+                      className="mt-1 h-5 w-5 accent-emerald-700"
                     />
 
                     <div>
@@ -716,23 +1190,31 @@ export default function NoticesAdminPage() {
                         ⭐ Important Notice
                       </p>
 
-                      <p className="text-xs text-slate-500">
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
                         Notice ko important mark karein.
                       </p>
                     </div>
                   </label>
 
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  {/* PUBLISHED */}
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-200 hover:bg-emerald-50">
                     <input
                       type="checkbox"
-                      checked={form.published}
-                      onChange={(e) =>
+                      checked={
+                        form.published
+                      }
+                      onChange={(
+                        event
+                      ) =>
                         setForm({
                           ...form,
-                          published: e.target.checked,
+                          published:
+                            event.target
+                              .checked,
                         })
                       }
-                      className="h-5 w-5 accent-emerald-700"
+                      className="mt-1 h-5 w-5 accent-emerald-700"
                     />
 
                     <div>
@@ -740,7 +1222,7 @@ export default function NoticesAdminPage() {
                         ✓ Publish Notice
                       </p>
 
-                      <p className="text-xs text-slate-500">
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
                         ON = website par visible.
                       </p>
                     </div>
@@ -748,20 +1230,27 @@ export default function NoticesAdminPage() {
                 </div>
               </div>
 
-              {/* FOOTER BUTTONS */}
+              {/* FORM BUTTONS */}
+
               <div className="mt-7 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={saving || uploading}
-                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  disabled={
+                    saving ||
+                    uploading
+                  }
+                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  disabled={saving || uploading}
+                  disabled={
+                    saving ||
+                    uploading
+                  }
                   className="rounded-xl bg-emerald-700 px-7 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {uploading
@@ -799,12 +1288,18 @@ function StatCard({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-500">{label}</p>
+        <p className="text-sm font-semibold text-slate-500">
+          {label}
+        </p>
 
-        <span className="text-xl">{icon}</span>
+        <span className="text-xl">
+          {icon}
+        </span>
       </div>
 
-      <p className={`mt-3 text-3xl font-black ${valueClass}`}>
+      <p
+        className={`mt-3 text-3xl font-black ${valueClass}`}
+      >
         {value}
       </p>
     </div>
@@ -828,21 +1323,25 @@ function NoticeCard({
   onTogglePublished: () => void;
   onToggleImportant: () => void;
 }) {
-  const formattedDate = notice.notice_date
-    ? new Date(`${notice.notice_date}T00:00:00`).toLocaleDateString(
-        "en-IN",
-        {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }
-      )
-    : "No date";
+  const formattedDate =
+    notice.notice_date
+      ? new Date(
+          `${notice.notice_date}T00:00:00`
+        ).toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }
+        )
+      : "No date";
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
       <div className="flex flex-col md:flex-row">
         {/* IMAGE */}
+
         {notice.image_url ? (
           <div className="h-56 w-full shrink-0 bg-slate-100 md:h-auto md:w-64">
             <img
@@ -858,13 +1357,18 @@ function NoticeCard({
         )}
 
         {/* CONTENT */}
+
         <div className="flex-1 p-5">
           <div className="flex flex-wrap items-center gap-2">
+            {/* IMPORTANT */}
+
             {notice.important && (
               <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">
                 ⭐ Important
               </span>
             )}
+
+            {/* PUBLISHED */}
 
             {notice.published ? (
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
@@ -876,20 +1380,28 @@ function NoticeCard({
               </span>
             )}
 
+            {/* DATE */}
+
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               📅 {formattedDate}
             </span>
           </div>
 
+          {/* TITLE */}
+
           <h3 className="mt-3 text-xl font-black text-slate-900">
             {notice.title}
           </h3>
 
+          {/* DESCRIPTION */}
+
           <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm leading-6 text-slate-600">
-            {notice.description || "No description available."}
+            {notice.description ||
+              "No description available."}
           </p>
 
           {/* ACTIONS */}
+
           <div className="mt-5 flex flex-wrap gap-2">
             <button
               type="button"
@@ -901,7 +1413,9 @@ function NoticeCard({
 
             <button
               type="button"
-              onClick={onTogglePublished}
+              onClick={
+                onTogglePublished
+              }
               className={`rounded-lg px-4 py-2 text-xs font-bold text-white transition ${
                 notice.published
                   ? "bg-amber-500 hover:bg-amber-600"
@@ -915,7 +1429,9 @@ function NoticeCard({
 
             <button
               type="button"
-              onClick={onToggleImportant}
+              onClick={
+                onToggleImportant
+              }
               className="rounded-lg bg-slate-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
             >
               {notice.important
