@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -13,8 +13,8 @@ export default function AdminDashboardPage() {
   const [admissionCount, setAdmissionCount] = useState(0);
   const [enquiryCount, setEnquiryCount] = useState(0);
   const [studentCount, setStudentCount] = useState(0);
-  const [noticeCount, setNoticeCount] = useState(0);
   const [teacherCount, setTeacherCount] = useState(0);
+  const [noticeCount, setNoticeCount] = useState(0);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -86,46 +86,22 @@ export default function AdminDashboardPage() {
         // ==========================================
 
         const {
-          count: approvedStudentsCount,
-          error: approvedStudentsError,
+          count: studentsCount,
+          error: studentsError,
         } = await supabase
-          .from("admissions")
-          .select("*", {
-            count: "exact",
-            head: true,
-          })
-          .eq("status", "approved");
-
-        if (approvedStudentsError) {
-          console.error(
-            "Approved students count error:",
-            approvedStudentsError.message
-          );
-        } else {
-          setStudentCount(approvedStudentsCount || 0);
-        }
-
-        // ==========================================
-        // TOTAL NOTICES
-        // ==========================================
-
-        const {
-          count: noticesCount,
-          error: noticesError,
-        } = await supabase
-          .from("notices")
+          .from("students")
           .select("*", {
             count: "exact",
             head: true,
           });
 
-        if (noticesError) {
+        if (studentsError) {
           console.error(
-            "Notices count error:",
-            noticesError.message
+            "Students count error:",
+            studentsError.message
           );
         } else {
-          setNoticeCount(noticesCount || 0);
+          setStudentCount(studentsCount || 0);
         }
 
         // ==========================================
@@ -149,6 +125,29 @@ export default function AdminDashboardPage() {
           );
         } else {
           setTeacherCount(teachersCount || 0);
+        }
+
+        // ==========================================
+        // TOTAL NOTICES
+        // ==========================================
+
+        const {
+          count: noticesCount,
+          error: noticesError,
+        } = await supabase
+          .from("notices")
+          .select("*", {
+            count: "exact",
+            head: true,
+          });
+
+        if (noticesError) {
+          console.error(
+            "Notices count error:",
+            noticesError.message
+          );
+        } else {
+          setNoticeCount(noticesCount || 0);
         }
 
         setLoading(false);
@@ -194,14 +193,20 @@ export default function AdminDashboardPage() {
     );
   }
 
+  // ==========================================
+  // DASHBOARD
+  // ==========================================
+
   return (
     <main className="min-h-screen bg-gray-50">
+
       {/* ==========================================
           HEADER
       ========================================== */}
 
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+
           <div>
             <p className="text-sm font-semibold text-green-700">
               Madrasa Majmaul Bahrain Bijol
@@ -219,6 +224,7 @@ export default function AdminDashboardPage() {
           >
             Logout
           </button>
+
         </div>
       </header>
 
@@ -227,11 +233,13 @@ export default function AdminDashboardPage() {
       ========================================== */}
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
         {/* ==========================================
             WELCOME
         ========================================== */}
 
         <div className="rounded-2xl bg-gradient-to-r from-green-700 to-green-600 p-6 text-white shadow-lg">
+
           <p className="text-sm font-medium text-green-100">
             Welcome back
           </p>
@@ -243,19 +251,21 @@ export default function AdminDashboardPage() {
           <p className="mt-2 text-sm text-green-100">
             Logged in as: {email}
           </p>
+
         </div>
 
         {/* ==========================================
             DASHBOARD CARDS
         ========================================== */}
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
 
           {/* ========================================
               ADMISSIONS
           ======================================== */}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl">
               🎓
             </div>
@@ -268,8 +278,14 @@ export default function AdminDashboardPage() {
               Manage student admission applications.
             </p>
 
-            <div className="mt-4 text-2xl font-black text-green-700">
-              {admissionCount}
+            <div className="mt-4">
+              <span className="text-3xl font-black text-green-700">
+                {admissionCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Applications
+              </span>
             </div>
 
             <button
@@ -277,10 +293,11 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/admissions")
               }
-              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Admissions →
             </button>
+
           </div>
 
           {/* ========================================
@@ -288,6 +305,7 @@ export default function AdminDashboardPage() {
           ======================================== */}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-2xl">
               📩
             </div>
@@ -300,8 +318,14 @@ export default function AdminDashboardPage() {
               View and manage website enquiries.
             </p>
 
-            <div className="mt-4 text-2xl font-black text-blue-700">
-              {enquiryCount}
+            <div className="mt-4">
+              <span className="text-3xl font-black text-blue-700">
+                {enquiryCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                New
+              </span>
             </div>
 
             <button
@@ -309,10 +333,11 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/enquiries")
               }
-              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Enquiries →
             </button>
+
           </div>
 
           {/* ========================================
@@ -320,6 +345,7 @@ export default function AdminDashboardPage() {
           ======================================== */}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-2xl">
               👨‍🎓
             </div>
@@ -329,11 +355,17 @@ export default function AdminDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm text-gray-500">
-              Manage approved students and their records.
+              Manage registered students and records.
             </p>
 
-            <div className="mt-4 text-2xl font-black text-purple-700">
-              {studentCount}
+            <div className="mt-4">
+              <span className="text-3xl font-black text-purple-700">
+                {studentCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Students
+              </span>
             </div>
 
             <button
@@ -341,10 +373,11 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/students")
               }
-              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Students →
             </button>
+
           </div>
 
           {/* ========================================
@@ -352,7 +385,8 @@ export default function AdminDashboardPage() {
           ======================================== */}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-2xl">
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-2xl">
               👨‍🏫
             </div>
 
@@ -361,11 +395,17 @@ export default function AdminDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm text-gray-500">
-              Add, edit, delete and manage teachers.
+              Add, edit and manage madrasa teachers.
             </p>
 
-            <div className="mt-4 text-2xl font-black text-indigo-700">
-              {teacherCount}
+            <div className="mt-4">
+              <span className="text-3xl font-black text-emerald-700">
+                {teacherCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Teachers
+              </span>
             </div>
 
             <button
@@ -373,10 +413,11 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/teachers")
               }
-              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Manage Teachers →
             </button>
+
           </div>
 
           {/* ========================================
@@ -384,6 +425,7 @@ export default function AdminDashboardPage() {
           ======================================== */}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-2xl">
               📢
             </div>
@@ -396,8 +438,14 @@ export default function AdminDashboardPage() {
               Create, edit and publish madrasa notices.
             </p>
 
-            <div className="mt-4 text-2xl font-black text-amber-600">
-              {noticeCount}
+            <div className="mt-4">
+              <span className="text-3xl font-black text-amber-600">
+                {noticeCount}
+              </span>
+
+              <span className="ml-2 text-xs font-semibold text-gray-400">
+                Notices
+              </span>
             </div>
 
             <button
@@ -405,39 +453,13 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/notices")
               }
-              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Manage Notices →
             </button>
+
           </div>
 
-          {/* ========================================
-              WEBSITE
-          ======================================== */}
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
-              🌐
-            </div>
-
-            <h3 className="mt-5 text-lg font-bold text-gray-900">
-              Website
-            </h3>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Quickly access the public madrasa website.
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                router.push("/")
-              }
-              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
-            >
-              Open Website →
-            </button>
-          </div>
         </div>
 
         {/* ==========================================
@@ -445,7 +467,9 @@ export default function AdminDashboardPage() {
         ========================================== */}
 
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
           <div className="flex items-center justify-between">
+
             <h3 className="text-xl font-bold text-gray-900">
               Quick Information
             </h3>
@@ -459,13 +483,15 @@ export default function AdminDashboardPage() {
             >
               Refresh
             </button>
+
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
-            {/* TOTAL STUDENTS */}
+            {/* STUDENTS */}
 
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 Total Students
               </p>
@@ -474,14 +500,12 @@ export default function AdminDashboardPage() {
                 {studentCount}
               </p>
 
-              <p className="mt-1 text-xs text-gray-400">
-                Approved admissions only
-              </p>
             </div>
 
-            {/* ADMISSION APPLICATIONS */}
+            {/* ADMISSIONS */}
 
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 Admission Applications
               </p>
@@ -489,11 +513,13 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-green-700">
                 {admissionCount}
               </p>
+
             </div>
 
-            {/* NEW ENQUIRIES */}
+            {/* ENQUIRIES */}
 
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 New Enquiries
               </p>
@@ -501,33 +527,27 @@ export default function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-bold text-blue-700">
                 {enquiryCount}
               </p>
+
             </div>
 
-            {/* TOTAL TEACHERS */}
+            {/* TEACHERS */}
 
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 Total Teachers
               </p>
 
-              <p className="mt-2 text-3xl font-bold text-indigo-700">
+              <p className="mt-2 text-3xl font-bold text-emerald-700">
                 {teacherCount}
               </p>
 
-              <button
-                type="button"
-                onClick={() =>
-                  router.push("/admin/teachers")
-                }
-                className="mt-2 text-xs font-bold text-green-700 hover:text-green-900"
-              >
-                Manage →
-              </button>
             </div>
 
-            {/* TOTAL NOTICES */}
+            {/* NOTICES */}
 
             <div className="rounded-xl bg-gray-50 p-5">
+
               <p className="text-sm text-gray-500">
                 Total Notices
               </p>
@@ -545,8 +565,11 @@ export default function AdminDashboardPage() {
               >
                 Manage →
               </button>
+
             </div>
+
           </div>
+
         </div>
 
         {/* ==========================================
@@ -554,6 +577,7 @@ export default function AdminDashboardPage() {
         ========================================== */}
 
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
           <h3 className="text-xl font-bold text-gray-900">
             System Status
           </h3>
@@ -563,6 +587,7 @@ export default function AdminDashboardPage() {
             {/* ADMIN LOGIN */}
 
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
@@ -576,11 +601,13 @@ export default function AdminDashboardPage() {
                   Active
                 </p>
               </div>
+
             </div>
 
             {/* SUPABASE */}
 
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
@@ -594,11 +621,13 @@ export default function AdminDashboardPage() {
                   Connected
                 </p>
               </div>
+
             </div>
 
             {/* WEBSITE */}
 
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 ✅
               </div>
@@ -612,10 +641,15 @@ export default function AdminDashboardPage() {
                   Online
                 </p>
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </section>
+
     </main>
   );
 }
