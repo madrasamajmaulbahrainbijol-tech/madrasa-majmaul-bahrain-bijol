@@ -249,7 +249,8 @@ export default function AdminDashboardPage() {
             DASHBOARD CARDS
         ========================================== */}
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+
           {/* ========================================
               ADMISSIONS
           ======================================== */}
@@ -267,14 +268,8 @@ export default function AdminDashboardPage() {
               Manage student admission applications.
             </p>
 
-            <div className="mt-4">
-              <span className="text-2xl font-black text-green-700">
-                {admissionCount}
-              </span>
-
-              <span className="ml-2 text-xs font-semibold text-gray-400">
-                Total
-              </span>
+            <div className="mt-4 text-2xl font-black text-green-700">
+              {admissionCount}
             </div>
 
             <button
@@ -282,7 +277,7 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/admissions")
               }
-              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Admissions →
             </button>
@@ -305,14 +300,8 @@ export default function AdminDashboardPage() {
               View and manage website enquiries.
             </p>
 
-            <div className="mt-4">
-              <span className="text-2xl font-black text-blue-700">
-                {enquiryCount}
-              </span>
-
-              <span className="ml-2 text-xs font-semibold text-gray-400">
-                New
-              </span>
+            <div className="mt-4 text-2xl font-black text-blue-700">
+              {enquiryCount}
             </div>
 
             <button
@@ -320,7 +309,7 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/enquiries")
               }
-              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Enquiries →
             </button>
@@ -343,14 +332,8 @@ export default function AdminDashboardPage() {
               Manage approved students and their records.
             </p>
 
-            <div className="mt-4">
-              <span className="text-2xl font-black text-purple-700">
-                {studentCount}
-              </span>
-
-              <span className="ml-2 text-xs font-semibold text-gray-400">
-                Approved
-              </span>
+            <div className="mt-4 text-2xl font-black text-purple-700">
+              {studentCount}
             </div>
 
             <button
@@ -358,7 +341,7 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/students")
               }
-              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               View Students →
             </button>
@@ -378,17 +361,11 @@ export default function AdminDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm text-gray-500">
-              Add, edit, delete and manage madrasa teachers.
+              Add, edit, delete and manage teachers.
             </p>
 
-            <div className="mt-4">
-              <span className="text-2xl font-black text-indigo-700">
-                {teacherCount}
-              </span>
-
-              <span className="ml-2 text-xs font-semibold text-gray-400">
-                Total Teachers
-              </span>
+            <div className="mt-4 text-2xl font-black text-indigo-700">
+              {teacherCount}
             </div>
 
             <button
@@ -396,7 +373,7 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/teachers")
               }
-              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Manage Teachers →
             </button>
@@ -419,14 +396,8 @@ export default function AdminDashboardPage() {
               Create, edit and publish madrasa notices.
             </p>
 
-            <div className="mt-4">
-              <span className="text-2xl font-black text-amber-600">
-                {noticeCount}
-              </span>
-
-              <span className="ml-2 text-xs font-semibold text-gray-400">
-                Total Notices
-              </span>
+            <div className="mt-4 text-2xl font-black text-amber-600">
+              {noticeCount}
             </div>
 
             <button
@@ -434,9 +405,37 @@ export default function AdminDashboardPage() {
               onClick={() =>
                 router.push("/admin/notices")
               }
-              className="mt-4 text-sm font-bold text-green-700 transition hover:text-green-900"
+              className="mt-3 text-sm font-bold text-green-700 transition hover:text-green-900"
             >
               Manage Notices →
+            </button>
+          </div>
+
+          {/* ========================================
+              WEBSITE
+          ======================================== */}
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
+              🌐
+            </div>
+
+            <h3 className="mt-5 text-lg font-bold text-gray-900">
+              Website
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Quickly access the public madrasa website.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                router.push("/")
+              }
+              className="mt-5 text-sm font-bold text-green-700 transition hover:text-green-900"
+            >
+              Open Website →
             </button>
           </div>
         </div>
@@ -463,6 +462,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
             {/* TOTAL STUDENTS */}
 
             <div className="rounded-xl bg-gray-50 p-5">
@@ -559,6 +559,7 @@ export default function AdminDashboardPage() {
           </h3>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
+
             {/* ADMIN LOGIN */}
 
             <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
