@@ -48,7 +48,9 @@ type FilterType =
 ========================================================= */
 
 const getToday = () => {
-  return new Date().toISOString().split("T")[0];
+  return new Date()
+    .toISOString()
+    .split("T")[0];
 };
 
 const getEmptyForm = (): NoticeForm => ({
@@ -65,36 +67,49 @@ const getEmptyForm = (): NoticeForm => ({
 ========================================================= */
 
 export default function NoticesAdminPage() {
-  const [notices, setNotices] = useState<Notice[]>([]);
+  const [notices, setNotices] =
+    useState<Notice[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] =
+    useState(false);
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  const [showForm, setShowForm] =
+    useState(false);
+
   const [editingNotice, setEditingNotice] =
     useState<Notice | null>(null);
 
-  const [form, setForm] = useState<NoticeForm>(
-    getEmptyForm()
-  );
+  const [form, setForm] =
+    useState<NoticeForm>(
+      getEmptyForm()
+    );
 
   const [selectedImage, setSelectedImage] =
     useState<File | null>(null);
 
   const [previewUrl, setPreviewUrl] =
-    useState<string>("");
+    useState("");
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] =
+    useState("");
 
   const [filter, setFilter] =
     useState<FilterType>("all");
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   /* =======================================================
-     LOAD NOTICES ON PAGE LOAD
+     LOAD
   ======================================================= */
 
   useEffect(() => {
@@ -102,7 +117,7 @@ export default function NoticesAdminPage() {
   }, []);
 
   /* =======================================================
-     IMAGE PREVIEW CLEANUP
+     PREVIEW CLEANUP
   ======================================================= */
 
   useEffect(() => {
@@ -122,21 +137,29 @@ export default function NoticesAdminPage() {
     setError("");
 
     try {
-      const { data, error } = await supabase
-        .from("notices")
-        .select("*")
-        .order("notice_date", {
-          ascending: false,
-        })
-        .order("created_at", {
-          ascending: false,
-        });
+      const { data, error } =
+        await supabase
+          .from("notices")
+          .select("*")
+          .order("notice_date", {
+            ascending: false,
+          })
+          .order("created_at", {
+            ascending: false,
+          });
 
       if (error) {
         throw error;
       }
 
-      setNotices((data || []) as Notice[]);
+      console.log(
+        "Loaded notices:",
+        data
+      );
+
+      setNotices(
+        (data || []) as Notice[]
+      );
     } catch (err: any) {
       console.error(
         "Load notices error:",
@@ -153,7 +176,7 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     OPEN ADD FORM
+     OPEN ADD
   ======================================================= */
 
   function openAddForm() {
@@ -170,10 +193,12 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     OPEN EDIT FORM
+     OPEN EDIT
   ======================================================= */
 
-  function openEditForm(notice: Notice) {
+  function openEditForm(
+    notice: Notice
+  ) {
     clearPreview();
 
     setEditingNotice(notice);
@@ -183,7 +208,8 @@ export default function NoticesAdminPage() {
       description:
         notice.description || "",
       notice_date:
-        notice.notice_date || getToday(),
+        notice.notice_date ||
+        getToday(),
       image_url:
         notice.image_url || "",
       important:
@@ -201,7 +227,7 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     CLEAR IMAGE PREVIEW
+     CLEAR PREVIEW
   ======================================================= */
 
   function clearPreview() {
@@ -244,7 +270,9 @@ export default function NoticesAdminPage() {
     setSelectedImage(file);
 
     if (file) {
-      const url = URL.createObjectURL(file);
+      const url =
+        URL.createObjectURL(file);
+
       setPreviewUrl(url);
     }
   }
@@ -262,6 +290,10 @@ export default function NoticesAdminPage() {
     setError("");
 
     try {
+      console.log(
+        "Starting image upload..."
+      );
+
       const oldImageUrl =
         form.image_url;
 
@@ -269,6 +301,19 @@ export default function NoticesAdminPage() {
         await uploadNoticeImage(
           selectedImage
         );
+
+      console.log(
+        "FINAL IMAGE URL:",
+        imageUrl
+      );
+
+      if (!imageUrl) {
+        throw new Error(
+          "Image upload hua lekin URL empty mila."
+        );
+      }
+
+      /* Delete old image only after new upload succeeds */
 
       if (
         oldImageUrl &&
@@ -286,10 +331,12 @@ export default function NoticesAdminPage() {
         }
       }
 
-      setForm((previous) => ({
-        ...previous,
-        image_url: imageUrl,
-      }));
+      setForm(
+        (previous) => ({
+          ...previous,
+          image_url: imageUrl,
+        })
+      );
 
       setSelectedImage(null);
 
@@ -353,15 +400,50 @@ export default function NoticesAdminPage() {
     setSaving(true);
 
     try {
-      let finalImageUrl =
-        form.image_url;
+      /* ===================================================
+         IMAGE URL
+      =================================================== */
 
-      /* Upload new image if selected */
+      let finalImageUrl =
+        form.image_url || "";
+
+      /*
+        IMPORTANT:
+        Agar new image selected hai to
+        upload karo aur returned URL ko
+        directly finalImageUrl mein rakho.
+      */
 
       if (selectedImage) {
+        console.log(
+          "New image selected. Uploading..."
+        );
+
         finalImageUrl =
           await handleImageUpload();
+
+        console.log(
+          "Image URL received in handleSubmit:",
+          finalImageUrl
+        );
       }
+
+      /*
+        Safety check
+      */
+
+      if (
+        selectedImage === null &&
+        form.image_url
+      ) {
+        finalImageUrl =
+          form.image_url;
+      }
+
+      console.log(
+        "FINAL IMAGE URL TO DATABASE:",
+        finalImageUrl
+      );
 
       const now =
         new Date().toISOString();
@@ -372,7 +454,9 @@ export default function NoticesAdminPage() {
         notice_date:
           form.notice_date || null,
         image_url:
-          finalImageUrl || null,
+          finalImageUrl
+            ? finalImageUrl
+            : null,
         important:
           Boolean(form.important),
         published:
@@ -380,10 +464,18 @@ export default function NoticesAdminPage() {
         updated_at: now,
       };
 
-      /* UPDATE */
+      console.log(
+        "NOTICE DATA:",
+        noticeData
+      );
+
+      /* ===================================================
+         UPDATE
+      =================================================== */
 
       if (editingNotice) {
         const {
+          data: updatedData,
           error: updateError,
         } = await supabase
           .from("notices")
@@ -391,10 +483,31 @@ export default function NoticesAdminPage() {
           .eq(
             "id",
             editingNotice.id
-          );
+          )
+          .select()
+          .single();
 
         if (updateError) {
           throw updateError;
+        }
+
+        console.log(
+          "UPDATED NOTICE:",
+          updatedData
+        );
+
+        /*
+          Extra verification:
+          Database mein image_url actual save hua ya nahi.
+        */
+
+        if (
+          finalImageUrl &&
+          !updatedData?.image_url
+        ) {
+          throw new Error(
+            "Image upload ho gayi, lekin database mein image URL save nahi hua."
+          );
         }
 
         setMessage(
@@ -402,26 +515,54 @@ export default function NoticesAdminPage() {
         );
       }
 
-      /* INSERT */
+      /* ===================================================
+         INSERT
+      =================================================== */
 
       else {
         const {
+          data: insertedData,
           error: insertError,
         } = await supabase
           .from("notices")
           .insert({
             ...noticeData,
             created_at: now,
-          });
+          })
+          .select()
+          .single();
 
         if (insertError) {
           throw insertError;
+        }
+
+        console.log(
+          "INSERTED NOTICE:",
+          insertedData
+        );
+
+        /*
+          Extra verification:
+          Database mein image_url actual save hua ya nahi.
+        */
+
+        if (
+          finalImageUrl &&
+          !insertedData?.image_url
+        ) {
+          throw new Error(
+            "Image upload ho gayi, lekin database mein image URL save nahi hua."
+          );
         }
 
         setMessage(
           "New notice successfully add ho gaya."
         );
       }
+
+      /* ===================================================
+         RELOAD
+      =================================================== */
 
       await loadNotices();
 
@@ -441,7 +582,7 @@ export default function NoticesAdminPage() {
 
       setError(
         err?.message ||
-          "Notice save nahi ho saka. Supabase table/settings check karein."
+          "Notice save nahi ho saka."
       );
     } finally {
       setSaving(false);
@@ -449,7 +590,7 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     DELETE NOTICE
+     DELETE
   ======================================================= */
 
   async function handleDelete(
@@ -511,7 +652,7 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     PUBLISH / UNPUBLISH
+     PUBLISH
   ======================================================= */
 
   async function togglePublished(
@@ -558,7 +699,7 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     IMPORTANT TOGGLE
+     IMPORTANT
   ======================================================= */
 
   async function toggleImportant(
@@ -605,7 +746,7 @@ export default function NoticesAdminPage() {
   }
 
   /* =======================================================
-     FILTER + SEARCH
+     FILTER
   ======================================================= */
 
   const filteredNotices =
@@ -616,8 +757,8 @@ export default function NoticesAdminPage() {
       return notices.filter(
         (notice) => {
           const title =
-            notice.title?.toLowerCase() ||
-            "";
+            notice.title
+              ?.toLowerCase() || "";
 
           const description =
             notice.description
@@ -666,7 +807,7 @@ export default function NoticesAdminPage() {
     ]);
 
   /* =======================================================
-     STATISTICS
+     COUNTS
   ======================================================= */
 
   const publishedCount =
@@ -693,9 +834,7 @@ export default function NoticesAdminPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      {/* ===================================================
-          HEADER
-      =================================================== */}
+      {/* HEADER */}
 
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
@@ -722,20 +861,14 @@ export default function NoticesAdminPage() {
         </div>
       </header>
 
-      {/* ===================================================
-          MAIN CONTENT
-      =================================================== */}
+      {/* MAIN */}
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        {/* SUCCESS MESSAGE */}
-
         {message && (
           <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800">
             ✓ {message}
           </div>
         )}
-
-        {/* ERROR MESSAGE */}
 
         {error && !showForm && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
@@ -743,9 +876,7 @@ export default function NoticesAdminPage() {
           </div>
         )}
 
-        {/* =================================================
-            STATS
-        ================================================= */}
+        {/* STATS */}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -776,9 +907,7 @@ export default function NoticesAdminPage() {
           />
         </section>
 
-        {/* =================================================
-            SEARCH + FILTER + ADD
-        ================================================= */}
+        {/* SEARCH */}
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
@@ -849,9 +978,7 @@ export default function NoticesAdminPage() {
           </div>
         </section>
 
-        {/* =================================================
-            NOTICE LIST
-        ================================================= */}
+        {/* LIST */}
 
         <section className="mt-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -873,8 +1000,6 @@ export default function NoticesAdminPage() {
             </button>
           </div>
 
-          {/* LOADING */}
-
           {loading ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
@@ -883,10 +1008,7 @@ export default function NoticesAdminPage() {
                 Notices load ho rahe hain...
               </p>
             </div>
-          ) : filteredNotices.length ===
-            0 ? (
-            /* EMPTY */
-
+          ) : filteredNotices.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center">
               <div className="text-5xl">
                 📢
@@ -909,8 +1031,6 @@ export default function NoticesAdminPage() {
               </button>
             </div>
           ) : (
-            /* LIST */
-
             <div className="space-y-4">
               {filteredNotices.map(
                 (notice) => (
@@ -945,9 +1065,7 @@ export default function NoticesAdminPage() {
         </section>
       </div>
 
-      {/* ===================================================
-          ADD / EDIT MODAL
-      =================================================== */}
+      {/* MODAL */}
 
       {showForm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-4">
@@ -986,8 +1104,6 @@ export default function NoticesAdminPage() {
               onSubmit={handleSubmit}
               className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6"
             >
-              {/* FORM ERROR */}
-
               {error && (
                 <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                   ⚠ {error}
@@ -1108,7 +1224,7 @@ export default function NoticesAdminPage() {
                       JPG, PNG, WEBP, GIF — maximum 5MB.
                     </p>
 
-                    {/* SELECTED IMAGE */}
+                    {/* SELECTED */}
 
                     {selectedImage && (
                       <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
@@ -1121,7 +1237,7 @@ export default function NoticesAdminPage() {
                       </div>
                     )}
 
-                    {/* NEW PREVIEW */}
+                    {/* PREVIEW */}
 
                     {selectedImage &&
                       previewUrl && (
@@ -1140,7 +1256,7 @@ export default function NoticesAdminPage() {
                         </div>
                       )}
 
-                    {/* CURRENT IMAGE */}
+                    {/* CURRENT */}
 
                     {form.image_url &&
                       !selectedImage && (
@@ -1164,8 +1280,6 @@ export default function NoticesAdminPage() {
                 {/* OPTIONS */}
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {/* IMPORTANT */}
-
                   <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-red-200 hover:bg-red-50">
                     <input
                       type="checkbox"
@@ -1195,8 +1309,6 @@ export default function NoticesAdminPage() {
                       </p>
                     </div>
                   </label>
-
-                  {/* PUBLISHED */}
 
                   <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-200 hover:bg-emerald-50">
                     <input
@@ -1230,7 +1342,7 @@ export default function NoticesAdminPage() {
                 </div>
               </div>
 
-              {/* FORM BUTTONS */}
+              {/* BUTTONS */}
 
               <div className="mt-7 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
                 <button
@@ -1348,6 +1460,15 @@ function NoticeCard({
               src={notice.image_url}
               alt={notice.title}
               className="h-full w-full object-cover"
+              onError={(event) => {
+                console.error(
+                  "Notice image failed to load:",
+                  notice.image_url
+                );
+
+                event.currentTarget.style.display =
+                  "none";
+              }}
             />
           </div>
         ) : (
@@ -1360,15 +1481,11 @@ function NoticeCard({
 
         <div className="flex-1 p-5">
           <div className="flex flex-wrap items-center gap-2">
-            {/* IMPORTANT */}
-
             {notice.important && (
               <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">
                 ⭐ Important
               </span>
             )}
-
-            {/* PUBLISHED */}
 
             {notice.published ? (
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
@@ -1380,27 +1497,19 @@ function NoticeCard({
               </span>
             )}
 
-            {/* DATE */}
-
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               📅 {formattedDate}
             </span>
           </div>
 
-          {/* TITLE */}
-
           <h3 className="mt-3 text-xl font-black text-slate-900">
             {notice.title}
           </h3>
-
-          {/* DESCRIPTION */}
 
           <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm leading-6 text-slate-600">
             {notice.description ||
               "No description available."}
           </p>
-
-          {/* ACTIONS */}
 
           <div className="mt-5 flex flex-wrap gap-2">
             <button
