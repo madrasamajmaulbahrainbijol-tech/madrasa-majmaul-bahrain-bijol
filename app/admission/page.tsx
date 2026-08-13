@@ -5,138 +5,70 @@ import Link from "next/link";
 import Footer from "../components/Footer";
 import { supabase } from "../lib/supabase/client";
 
-type FormData = {
-  // ================================
-  // STUDENT INFORMATION
-  // ================================
+type FormDataType = {
   full_name: string;
   date_of_birth: string;
   gender: string;
-  place_of_birth: string;
-  nationality: string;
-  previous_school: string;
-  previous_class: string;
-  quran_education: string;
 
-  // ================================
-  // PARENT / GUARDIAN
-  // ================================
   father_name: string;
   mother_name: string;
   guardian_name: string;
   guardian_relation: string;
-  phone: string;
-  whatsapp: string;
-  alternate_phone: string;
-  email: string;
-  occupation: string;
+  contact_number_1: string;
+  contact_number_2: string;
 
-  // ================================
-  // ADDRESS
-  // ================================
-  address: string;
-  village: string;
-  post_office: string;
+  full_address: string;
+  village_city: string;
   district: string;
   state: string;
-  pincode: string;
-  country: string;
+  pin_code: string;
 
-  // ================================
-  // ADMISSION DETAILS
-  // ================================
   course: string;
-  academic_session: string;
-  admission_type: string;
-  preferred_start_date: string;
-  previous_madrasa: string;
-  reason_for_admission: string;
 
-  // ================================
-  // ADDITIONAL
-  // ================================
-  message: string;
-};
-
-const initialFormData: FormData = {
-  full_name: "",
-  date_of_birth: "",
-  gender: "",
-  place_of_birth: "",
-  nationality: "Indian",
-  previous_school: "",
-  previous_class: "",
-  quran_education: "",
-
-  father_name: "",
-  mother_name: "",
-  guardian_name: "",
-  guardian_relation: "",
-  phone: "",
-  whatsapp: "",
-  alternate_phone: "",
-  email: "",
-  occupation: "",
-
-  address: "",
-  village: "",
-  post_office: "",
-  district: "",
-  state: "",
-  pincode: "",
-  country: "India",
-
-  course: "",
-  academic_session: "2026",
-  admission_type: "New Admission",
-  preferred_start_date: "",
-  previous_madrasa: "",
-  reason_for_admission: "",
-
-  message: "",
+  student_document_type: string;
 };
 
 export default function AdmissionPage() {
-  const [formData, setFormData] =
-    useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormDataType>({
+    full_name: "",
+    date_of_birth: "",
+    gender: "",
 
-  const [studentPhoto, setStudentPhoto] =
-    useState<File | null>(null);
+    father_name: "",
+    mother_name: "",
+    guardian_name: "",
+    guardian_relation: "",
+    contact_number_1: "",
+    contact_number_2: "",
 
-  const [birthCertificate, setBirthCertificate] =
-    useState<File | null>(null);
+    full_address: "",
+    village_city: "",
+    district: "",
+    state: "",
+    pin_code: "",
 
-  const [previousCertificate, setPreviousCertificate] =
-    useState<File | null>(null);
+    course: "",
 
-  const [idDocument, setIdDocument] =
-    useState<File | null>(null);
+    student_document_type: "",
+  });
 
-  const [residenceProof, setResidenceProof] =
-    useState<File | null>(null);
-
-  const [declarationAccepted, setDeclarationAccepted] =
-    useState(false);
+  const [studentPhoto, setStudentPhoto] = useState<File | null>(null);
+  const [studentDocument, setStudentDocument] = useState<File | null>(
+    null
+  );
 
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] =
-    useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
 
-  const [applicationNumber, setApplicationNumber] =
-    useState("");
-
-  const [errorMessage, setErrorMessage] =
-    useState("");
-
-  // ==========================================
-  // HANDLE INPUT
-  // ==========================================
+  /* =========================================================
+     HANDLE INPUT CHANGE
+  ========================================================= */
 
   const handleChange = (
     e: React.ChangeEvent<
-      HTMLInputElement |
-        HTMLTextAreaElement |
-        HTMLSelectElement
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value } = e.target;
@@ -147,34 +79,21 @@ export default function AdmissionPage() {
     }));
   };
 
-  // ==========================================
-  // HANDLE FILE
-  // ==========================================
+  /* =========================================================
+     FILE VALIDATION
+  ========================================================= */
 
-  const validateFile = (
-    file: File | null,
-    required = false
-  ) => {
-    if (!file) {
-      if (required) {
-        throw new Error(
-          "Student photograph is required."
-        );
-      }
-
-      return;
-    }
-
+  function validateImage(file: File, fieldName: string) {
     const allowedTypes = [
       "image/jpeg",
+      "image/jpg",
       "image/png",
       "image/webp",
-      "application/pdf",
     ];
 
     if (!allowedTypes.includes(file.type)) {
       throw new Error(
-        "Only JPG, PNG, WEBP or PDF files are allowed."
+        `${fieldName}: Sirf JPG, PNG ya WEBP image upload kar sakte hain.`
       );
     }
 
@@ -182,31 +101,107 @@ export default function AdmissionPage() {
 
     if (file.size > maxSize) {
       throw new Error(
-        `"${file.name}" is larger than 5 MB.`
+        `${fieldName}: Image maximum 5MB ki honi chahiye.`
       );
+    }
+  }
+
+  function validateDocument(file: File) {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(
+        "Document sirf JPG, PNG, WEBP ya PDF format me upload karein."
+      );
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      throw new Error(
+        "Document maximum 5MB ka hona chahiye."
+      );
+    }
+  }
+
+  /* =========================================================
+     STUDENT PHOTO
+  ========================================================= */
+
+  const handleStudentPhotoChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      setStudentPhoto(null);
+      return;
+    }
+
+    try {
+      validateImage(file, "Student Photo");
+      setStudentPhoto(file);
+      setErrorMessage("");
+    } catch (error) {
+      setStudentPhoto(null);
+
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      }
     }
   };
 
-  // ==========================================
-  // UPLOAD DOCUMENT
-  // ==========================================
+  /* =========================================================
+     STUDENT DOCUMENT
+  ========================================================= */
 
-  async function uploadDocument(
+  const handleStudentDocumentChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      setStudentDocument(null);
+      return;
+    }
+
+    try {
+      validateDocument(file);
+      setStudentDocument(file);
+      setErrorMessage("");
+    } catch (error) {
+      setStudentDocument(null);
+
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      }
+    }
+  };
+
+  /* =========================================================
+     UPLOAD FILE
+  ========================================================= */
+
+  async function uploadAdmissionFile(
     file: File,
-    folder: string,
-    applicationId: string
+    folder: string
   ): Promise<string> {
     const extension =
-      file.name.split(".").pop()?.toLowerCase() ||
-      "file";
+      file.name.split(".").pop()?.toLowerCase() || "file";
 
     const fileName = `${Date.now()}-${Math.random()
       .toString(36)
       .substring(2, 10)}.${extension}`;
 
-    const filePath = `${folder}/${applicationId}/${fileName}`;
+    const filePath = `${folder}/${fileName}`;
 
-    const { error } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("admission-documents")
       .upload(filePath, file, {
         cacheControl: "3600",
@@ -214,334 +209,212 @@ export default function AdmissionPage() {
         contentType: file.type,
       });
 
-    if (error) {
+    if (uploadError) {
       console.error(
-        "Document upload error:",
-        error
+        "Admission document upload error:",
+        uploadError
       );
 
       throw new Error(
-        `Document upload failed: ${error.message}`
+        uploadError.message ||
+          "Document upload nahi ho saka."
       );
     }
 
-    return filePath;
+    const { data } = supabase.storage
+      .from("admission-documents")
+      .getPublicUrl(filePath);
+
+    if (!data?.publicUrl) {
+      throw new Error(
+        "Uploaded document ka public URL nahi mila."
+      );
+    }
+
+    return data.publicUrl;
   }
 
-  // ==========================================
-  // SUBMIT
-  // ==========================================
+  /* =========================================================
+     SUBMIT FORM
+  ========================================================= */
 
-  const handleSubmit = async (
-    e: FormEvent
-  ) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     setLoading(true);
     setSuccessMessage("");
     setErrorMessage("");
-    setApplicationNumber("");
 
     try {
-      // ========================================
-      // CLEAN DATA
-      // ========================================
+      /* =====================================================
+         BASIC VALIDATION
+      ===================================================== */
 
-      const clean = {
-        ...formData,
+      const cleanData = {
+        full_name: formData.full_name.trim(),
+        date_of_birth: formData.date_of_birth,
+        gender: formData.gender,
 
-        full_name:
-          formData.full_name.trim(),
+        father_name: formData.father_name.trim(),
+        mother_name: formData.mother_name.trim(),
+        guardian_name: formData.guardian_name.trim(),
+        guardian_relation: formData.guardian_relation.trim(),
+        contact_number_1: formData.contact_number_1.trim(),
+        contact_number_2: formData.contact_number_2.trim(),
 
-        date_of_birth:
-          formData.date_of_birth.trim(),
+        full_address: formData.full_address.trim(),
+        village_city: formData.village_city.trim(),
+        district: formData.district.trim(),
+        state: formData.state.trim(),
+        pin_code: formData.pin_code.trim(),
 
-        father_name:
-          formData.father_name.trim(),
+        course: formData.course.trim(),
 
-        guardian_name:
-          formData.guardian_name.trim(),
-
-        phone:
-          formData.phone.trim(),
-
-        whatsapp:
-          formData.whatsapp.trim(),
-
-        alternate_phone:
-          formData.alternate_phone.trim(),
-
-        email:
-          formData.email.trim(),
-
-        address:
-          formData.address.trim(),
-
-        village:
-          formData.village.trim(),
-
-        post_office:
-          formData.post_office.trim(),
-
-        district:
-          formData.district.trim(),
-
-        state:
-          formData.state.trim(),
-
-        pincode:
-          formData.pincode.trim(),
-
-        course:
-          formData.course.trim(),
-
-        academic_session:
-          formData.academic_session.trim(),
+        student_document_type:
+          formData.student_document_type.trim(),
       };
 
-      // ========================================
-      // REQUIRED VALIDATION
-      // ========================================
-
-      if (!clean.full_name) {
+      if (!cleanData.full_name) {
         throw new Error(
           "Student full name is required."
         );
       }
 
-      if (!clean.date_of_birth) {
+      if (!cleanData.date_of_birth) {
         throw new Error(
-          "Date of birth is required."
+          "Student date of birth is required."
         );
       }
 
-      if (!clean.gender) {
+      if (!cleanData.gender) {
         throw new Error(
           "Please select student's gender."
         );
       }
 
-      if (!clean.father_name) {
+      if (!cleanData.contact_number_1) {
         throw new Error(
-          "Father's name is required."
+          "Primary contact number is required."
         );
       }
 
-      if (!clean.guardian_name) {
+      if (!cleanData.full_address) {
         throw new Error(
-          "Guardian name is required."
+          "Full address is required."
         );
       }
 
-      if (!clean.guardian_relation) {
+      if (!cleanData.village_city) {
         throw new Error(
-          "Please select guardian relationship."
+          "Village / City is required."
         );
       }
 
-      if (!clean.phone) {
-        throw new Error(
-          "Mobile number is required."
-        );
-      }
-
-      if (!/^[0-9]{10}$/.test(clean.phone)) {
-        throw new Error(
-          "Please enter a valid 10-digit mobile number."
-        );
-      }
-
-      if (
-        clean.whatsapp &&
-        !/^[0-9]{10}$/.test(clean.whatsapp)
-      ) {
-        throw new Error(
-          "Please enter a valid 10-digit WhatsApp number."
-        );
-      }
-
-      if (!clean.address) {
-        throw new Error(
-          "Address is required."
-        );
-      }
-
-      if (!clean.village) {
-        throw new Error(
-          "Village / Town is required."
-        );
-      }
-
-      if (!clean.district) {
+      if (!cleanData.district) {
         throw new Error(
           "District is required."
         );
       }
 
-      if (!clean.state) {
+      if (!cleanData.state) {
         throw new Error(
           "State is required."
         );
       }
 
-      if (!/^[0-9]{6}$/.test(clean.pincode)) {
+      if (!cleanData.pin_code) {
         throw new Error(
-          "Please enter a valid 6-digit PIN code."
+          "PIN code is required."
         );
       }
 
-      if (!clean.course) {
+      if (!cleanData.course) {
         throw new Error(
           "Please select a course."
         );
       }
 
-      if (!clean.academic_session) {
+      if (!studentPhoto) {
         throw new Error(
-          "Academic session is required."
+          "Student photo is mandatory."
+        );
+      }
+
+      if (!studentDocument) {
+        throw new Error(
+          "Aadhaar Card ya student ka koi ek certificate upload karna mandatory hai."
+        );
+      }
+
+      if (!cleanData.student_document_type) {
+        throw new Error(
+          "Please select the type of student document."
         );
       }
 
       if (!declarationAccepted) {
         throw new Error(
-          "Please accept the declaration before submitting."
+          "Please accept the declaration before submitting the form."
         );
       }
 
-      // ========================================
-      // FILE VALIDATION
-      // ========================================
+      /* =====================================================
+         UPLOAD STUDENT PHOTO
+      ===================================================== */
 
-      validateFile(studentPhoto, true);
-      validateFile(birthCertificate);
-      validateFile(previousCertificate);
-      validateFile(idDocument);
-      validateFile(residenceProof);
+      const studentPhotoUrl = await uploadAdmissionFile(
+        studentPhoto,
+        "student-photos"
+      );
 
-      // ========================================
-      // APPLICATION NUMBER
-      // ========================================
+      /* =====================================================
+         UPLOAD STUDENT DOCUMENT
+      ===================================================== */
 
-      const generatedApplicationNumber =
-        `MMBB-${new Date().getFullYear()}-${Math.floor(
-          100000 + Math.random() * 900000
-        )}`;
+      const studentDocumentUrl = await uploadAdmissionFile(
+        studentDocument,
+        "student-documents"
+      );
 
-      // ========================================
-      // INSERT ADMISSION
-      // ========================================
+      /* =====================================================
+         INSERT ADMISSION
+      ===================================================== */
 
-      const { data: admission, error } =
-        await supabase
-          .from("admissions")
-          .insert([
-            {
-              student_name:
-                clean.full_name,
+      const { error } = await supabase
+        .from("admissions")
+        .insert([
+          {
+            student_name: cleanData.full_name,
+            date_of_birth: cleanData.date_of_birth,
+            gender: cleanData.gender,
 
-              guardian_name:
-                clean.guardian_name,
+            father_name: cleanData.father_name || null,
+            mother_name: cleanData.mother_name || null,
+            guardian_name:
+              cleanData.guardian_name || null,
+            guardian_relation:
+              cleanData.guardian_relation || null,
 
-              mobile:
-                clean.phone,
+            mobile: cleanData.contact_number_1,
+            alternate_mobile:
+              cleanData.contact_number_2 || null,
 
-              email:
-                clean.email || null,
+            full_address: cleanData.full_address,
+            village_city: cleanData.village_city,
+            district: cleanData.district,
+            state: cleanData.state,
+            pin_code: cleanData.pin_code,
 
-              course:
-                clean.course,
+            course: cleanData.course,
 
-              message:
-                clean.message || null,
+            student_photo_url: studentPhotoUrl,
+            student_document_url: studentDocumentUrl,
+            student_document_type:
+              cleanData.student_document_type,
 
-              status: "new",
-
-              application_number:
-                generatedApplicationNumber,
-
-              date_of_birth:
-                clean.date_of_birth,
-
-              gender:
-                clean.gender,
-
-              place_of_birth:
-                clean.place_of_birth || null,
-
-              nationality:
-                clean.nationality || null,
-
-              previous_school:
-                clean.previous_school || null,
-
-              previous_class:
-                clean.previous_class || null,
-
-              quran_education:
-                clean.quran_education || null,
-
-              father_name:
-                clean.father_name,
-
-              mother_name:
-                clean.mother_name || null,
-
-              guardian_relation:
-                clean.guardian_relation,
-
-              whatsapp:
-                clean.whatsapp || null,
-
-              alternate_phone:
-                clean.alternate_phone || null,
-
-              occupation:
-                clean.occupation || null,
-
-              address:
-                clean.address,
-
-              village:
-                clean.village,
-
-              post_office:
-                clean.post_office || null,
-
-              district:
-                clean.district,
-
-              state:
-                clean.state,
-
-              pincode:
-                clean.pincode,
-
-              country:
-                clean.country || "India",
-
-              academic_session:
-                clean.academic_session,
-
-              admission_type:
-                clean.admission_type,
-
-              preferred_start_date:
-                clean.preferred_start_date ||
-                null,
-
-              previous_madrasa:
-                clean.previous_madrasa || null,
-
-              reason_for_admission:
-                clean.reason_for_admission ||
-                null,
-
-              declaration_accepted:
-                true,
-            },
-          ])
-          .select("id")
-          .single();
+            status: "new",
+          },
+        ]);
 
       if (error) {
         console.error(
@@ -551,138 +424,66 @@ export default function AdmissionPage() {
 
         throw new Error(
           error.message ||
-            "Admission form could not be submitted."
+            "Admission application could not be submitted."
         );
       }
 
-      if (!admission?.id) {
-        throw new Error(
-          "Admission application ID could not be generated."
-        );
-      }
-
-      // ========================================
-      // UPLOAD DOCUMENTS
-      // ========================================
-
-      const documentUpdates: {
-        student_photo_path?: string | null;
-        birth_certificate_path?: string | null;
-        previous_certificate_path?: string | null;
-        id_document_path?: string | null;
-        residence_proof_path?: string | null;
-      } = {};
-
-      if (studentPhoto) {
-        documentUpdates.student_photo_path =
-          await uploadDocument(
-            studentPhoto,
-            "student-photos",
-            admission.id
-          );
-      }
-
-      if (birthCertificate) {
-        documentUpdates.birth_certificate_path =
-          await uploadDocument(
-            birthCertificate,
-            "birth-certificates",
-            admission.id
-          );
-      }
-
-      if (previousCertificate) {
-        documentUpdates.previous_certificate_path =
-          await uploadDocument(
-            previousCertificate,
-            "previous-certificates",
-            admission.id
-          );
-      }
-
-      if (idDocument) {
-        documentUpdates.id_document_path =
-          await uploadDocument(
-            idDocument,
-            "id-documents",
-            admission.id
-          );
-      }
-
-      if (residenceProof) {
-        documentUpdates.residence_proof_path =
-          await uploadDocument(
-            residenceProof,
-            "residence-proofs",
-            admission.id
-          );
-      }
-
-      // ========================================
-      // SAVE DOCUMENT PATHS
-      // ========================================
-
-      if (
-        Object.keys(documentUpdates).length > 0
-      ) {
-        const { error: updateError } =
-          await supabase
-            .from("admissions")
-            .update(documentUpdates)
-            .eq("id", admission.id);
-
-        if (updateError) {
-          console.error(
-            "Document path update error:",
-            updateError
-          );
-
-          throw new Error(
-            "Application was saved but document information could not be saved."
-          );
-        }
-      }
-
-      // ========================================
-      // SUCCESS
-      // ========================================
-
-      setApplicationNumber(
-        generatedApplicationNumber
-      );
+      /* =====================================================
+         SUCCESS
+      ===================================================== */
 
       setSuccessMessage(
-        "JazakAllahu Khairan! Your admission application has been submitted successfully. Please save your application number for future reference."
+        "JazakAllahu Khairan! Your admission application has been submitted successfully. Our office team will review your application and contact you soon."
       );
 
-      setFormData(initialFormData);
+      /* =====================================================
+         RESET FORM
+      ===================================================== */
+
+      setFormData({
+        full_name: "",
+        date_of_birth: "",
+        gender: "",
+
+        father_name: "",
+        mother_name: "",
+        guardian_name: "",
+        guardian_relation: "",
+        contact_number_1: "",
+        contact_number_2: "",
+
+        full_address: "",
+        village_city: "",
+        district: "",
+        state: "",
+        pin_code: "",
+
+        course: "",
+
+        student_document_type: "",
+      });
 
       setStudentPhoto(null);
-      setBirthCertificate(null);
-      setPreviousCertificate(null);
-      setIdDocument(null);
-      setResidenceProof(null);
+      setStudentDocument(null);
       setDeclarationAccepted(false);
 
-      // Reset file inputs
-      const fileInputs =
-        document.querySelectorAll(
-          'input[type="file"]'
-        );
+      /* Reset file inputs */
 
-      fileInputs.forEach((input) => {
-        (
-          input as HTMLInputElement
-        ).value = "";
-      });
+      const photoInput = document.getElementById(
+        "student_photo"
+      ) as HTMLInputElement | null;
 
-      window.scrollTo({
-        top:
-          document.getElementById(
-            "apply"
-          )?.offsetTop || 0,
-        behavior: "smooth",
-      });
+      const documentInput = document.getElementById(
+        "student_document"
+      ) as HTMLInputElement | null;
+
+      if (photoInput) {
+        photoInput.value = "";
+      }
+
+      if (documentInput) {
+        documentInput.value = "";
+      }
     } catch (error) {
       console.error(
         "Admission form error:",
@@ -700,6 +501,10 @@ export default function AdmissionPage() {
       setLoading(false);
     }
   };
+
+  /* =========================================================
+     UI
+  ========================================================= */
 
   return (
     <>
@@ -725,10 +530,9 @@ export default function AdmissionPage() {
           </h1>
 
           <p className="mx-auto mt-8 max-w-3xl text-base leading-8 text-green-100 sm:text-lg">
-            Join an institution dedicated to Islamic
-            values, quality education, discipline and
-            character building. Admissions are now open
-            for the academic session 2026.
+            Join an institution dedicated to Islamic values,
+            quality education, discipline and character building.
+            Admissions are now open for the academic session 2026.
           </p>
 
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
@@ -750,7 +554,7 @@ export default function AdmissionPage() {
       </section>
 
       {/* =====================================================
-          INFORMATION
+          ADMISSION INFORMATION
       ===================================================== */}
 
       <section className="bg-white py-20">
@@ -774,8 +578,8 @@ export default function AdmissionPage() {
               </h3>
 
               <p className="leading-8 text-gray-700">
-                Quran, Hifz, Nazrah, Qirat and Darse
-                Nizami under qualified scholars.
+                Quran, Hifz, Nazrah, Qirat and Darse Nizami under
+                qualified scholars.
               </p>
             </div>
 
@@ -785,8 +589,8 @@ export default function AdmissionPage() {
               </h3>
 
               <p className="leading-8 text-gray-700">
-                English, Mathematics, Basic Science and
-                Moral Education with experienced teachers.
+                English, Mathematics, Basic Science and Moral
+                Education with experienced teachers.
               </p>
             </div>
 
@@ -796,8 +600,8 @@ export default function AdmissionPage() {
               </h3>
 
               <p className="leading-8 text-gray-700">
-                Focus on discipline, good manners,
-                leadership and Islamic values.
+                Focus on discipline, good manners, leadership and
+                Islamic values.
               </p>
             </div>
           </div>
@@ -814,8 +618,8 @@ export default function AdmissionPage() {
 
               <ul className="space-y-5 text-lg leading-8 text-gray-700">
                 <li>
-                  ✅ Boys seeking quality Islamic and
-                  Modern Education.
+                  ✅ Boys seeking quality Islamic and Modern
+                  Education.
                 </li>
 
                 <li>
@@ -823,46 +627,34 @@ export default function AdmissionPage() {
                 </li>
 
                 <li>
-                  ✅ Previous academic record if
-                  applicable.
+                  ✅ Parent / Guardian consent is mandatory.
                 </li>
 
                 <li>
-                  ✅ Parent/Guardian consent is mandatory.
-                </li>
-
-                <li>
-                  ✅ Admission is subject to seat
-                  availability.
+                  ✅ Admission is subject to seat availability.
                 </li>
               </ul>
             </div>
 
             <div className="rounded-3xl bg-white p-8 shadow-xl ring-1 ring-gray-100 sm:p-10">
               <h2 className="mb-7 text-3xl font-extrabold text-gray-900">
-                Documents
+                Required Documents
               </h2>
 
               <ul className="space-y-5 text-lg leading-8 text-gray-700">
                 <li>
-                  📷 Student Photograph — Required
+                  📷 Student Photograph — <strong>Mandatory</strong>
                 </li>
 
                 <li>
-                  📄 Birth Certificate — Optional
+                  📄 Aadhaar Card OR Any One Student Certificate —
+                  <strong> Mandatory</strong>
                 </li>
 
-                <li>
-                  📄 Previous School/Madrasa Certificate
-                  — Optional
-                </li>
-
-                <li>
-                  📄 ID Document — Optional
-                </li>
-
-                <li>
-                  📄 Residence Proof — Optional
+                <li className="text-base text-gray-500">
+                  Accepted certificates: Birth Certificate,
+                  Previous School Certificate, Transfer Certificate
+                  or other valid student certificate.
                 </li>
               </ul>
             </div>
@@ -890,8 +682,7 @@ export default function AdmissionPage() {
                 </h3>
 
                 <p className="mt-4 leading-7 text-gray-700">
-                  Complete the admission form with
-                  correct details.
+                  Complete the admission form with correct details.
                 </p>
               </div>
 
@@ -899,12 +690,12 @@ export default function AdmissionPage() {
                 <div className="mb-5 text-5xl">2️⃣</div>
 
                 <h3 className="text-xl font-bold text-green-700">
-                  Submit Documents
+                  Upload Documents
                 </h3>
 
                 <p className="mt-4 leading-7 text-gray-700">
-                  Upload available documents for
-                  verification.
+                  Upload the student photo and one valid certificate
+                  or Aadhaar card.
                 </p>
               </div>
 
@@ -916,8 +707,8 @@ export default function AdmissionPage() {
                 </h3>
 
                 <p className="mt-4 leading-7 text-gray-700">
-                  Documents and eligibility will be
-                  verified by the madrasa administration.
+                  Our office team will review the application and
+                  documents.
                 </p>
               </div>
 
@@ -929,8 +720,7 @@ export default function AdmissionPage() {
                 </h3>
 
                 <p className="mt-4 leading-7 text-gray-700">
-                  After approval, admission will be
-                  confirmed.
+                  After approval, the admission will be confirmed.
                 </p>
               </div>
             </div>
@@ -942,7 +732,7 @@ export default function AdmissionPage() {
 
           <section
             id="apply"
-            className="mt-24 rounded-[2rem] bg-gradient-to-br from-green-950 via-green-800 to-green-700 p-5 shadow-2xl sm:p-8 lg:p-12"
+            className="mt-24 rounded-[2rem] bg-gradient-to-br from-green-950 via-green-800 to-green-700 p-6 shadow-2xl sm:p-10 lg:p-14"
           >
             <div className="mx-auto max-w-5xl">
               <div className="text-center text-white">
@@ -955,48 +745,23 @@ export default function AdmissionPage() {
                 </h2>
 
                 <p className="mx-auto mt-5 max-w-2xl leading-8 text-green-100">
-                  Please fill in the form below carefully.
-                  All information should be accurate.
+                  Please fill in the form carefully and upload the
+                  required documents.
                 </p>
               </div>
 
-              {/* SUCCESS */}
+              {/* SUCCESS MESSAGE */}
 
               {successMessage && (
-                <div className="mt-8 rounded-2xl border border-green-300 bg-green-100 p-6 text-center text-green-900 shadow-lg">
-                  <div className="text-3xl">✅</div>
-
-                  <h3 className="mt-2 text-xl font-extrabold">
-                    Application Submitted Successfully
-                  </h3>
-
-                  <p className="mt-3 font-medium">
-                    {successMessage}
-                  </p>
-
-                  {applicationNumber && (
-                    <div className="mx-auto mt-5 max-w-md rounded-xl bg-white p-4 shadow">
-                      <p className="text-sm font-semibold text-gray-500">
-                        Your Application Number
-                      </p>
-
-                      <p className="mt-1 text-2xl font-black tracking-wider text-green-700">
-                        {applicationNumber}
-                      </p>
-
-                      <p className="mt-2 text-xs text-gray-500">
-                        Please save this number for future
-                        reference.
-                      </p>
-                    </div>
-                  )}
+                <div className="mt-8 rounded-2xl bg-green-100 p-5 text-center font-semibold text-green-800">
+                  ✅ {successMessage}
                 </div>
               )}
 
-              {/* ERROR */}
+              {/* ERROR MESSAGE */}
 
               {errorMessage && (
-                <div className="mt-8 rounded-2xl border border-red-300 bg-red-100 p-5 text-center font-semibold text-red-700">
+                <div className="mt-8 rounded-2xl bg-red-100 p-5 text-center font-semibold text-red-700">
                   ❌ {errorMessage}
                 </div>
               )}
@@ -1007,30 +772,25 @@ export default function AdmissionPage() {
 
               <form
                 onSubmit={handleSubmit}
-                className="mt-10 rounded-3xl bg-white p-5 shadow-2xl sm:p-8 lg:p-10"
+                className="mt-10 rounded-3xl bg-white p-6 shadow-2xl sm:p-10"
               >
-                {/* ===============================================
+                {/* =================================================
                     SECTION 1
-                =============================================== */}
+                ================================================= */}
 
-                <div className="border-b border-gray-200 pb-8">
-                  <div className="mb-6">
+                <div>
+                  <div className="mb-7 border-b border-gray-200 pb-4">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">
-                      Section 01
+                      Section 1
                     </p>
 
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">
-                      Student Information
+                      Student Details
                     </h3>
-
-                    <p className="mt-1 text-sm text-gray-500">
-                      Enter the student's personal and
-                      educational information.
-                    </p>
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">
-                    {/* NAME */}
+                    {/* FULL NAME */}
 
                     <div className="md:col-span-2">
                       <label
@@ -1048,11 +808,11 @@ export default function AdmissionPage() {
                         value={formData.full_name}
                         onChange={handleChange}
                         placeholder="Enter student's full name"
-                        className="input-style"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
-                    {/* DOB */}
+                    {/* DATE OF BIRTH */}
 
                     <div>
                       <label
@@ -1069,7 +829,7 @@ export default function AdmissionPage() {
                         required
                         value={formData.date_of_birth}
                         onChange={handleChange}
-                        className="input-style"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
@@ -1089,7 +849,7 @@ export default function AdmissionPage() {
                         required
                         value={formData.gender}
                         onChange={handleChange}
-                        className="input-style"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       >
                         <option value="">
                           Select gender
@@ -1104,125 +864,21 @@ export default function AdmissionPage() {
                         </option>
                       </select>
                     </div>
-
-                    {/* PLACE */}
-
-                    <div>
-                      <label
-                        htmlFor="place_of_birth"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Place of Birth
-                      </label>
-
-                      <input
-                        id="place_of_birth"
-                        name="place_of_birth"
-                        type="text"
-                        value={formData.place_of_birth}
-                        onChange={handleChange}
-                        placeholder="City / Village"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* NATIONALITY */}
-
-                    <div>
-                      <label
-                        htmlFor="nationality"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Nationality
-                      </label>
-
-                      <input
-                        id="nationality"
-                        name="nationality"
-                        type="text"
-                        value={formData.nationality}
-                        onChange={handleChange}
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* PREVIOUS SCHOOL */}
-
-                    <div>
-                      <label
-                        htmlFor="previous_school"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Previous School
-                      </label>
-
-                      <input
-                        id="previous_school"
-                        name="previous_school"
-                        type="text"
-                        value={formData.previous_school}
-                        onChange={handleChange}
-                        placeholder="School name"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* PREVIOUS CLASS */}
-
-                    <div>
-                      <label
-                        htmlFor="previous_class"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Previous Class / Grade
-                      </label>
-
-                      <input
-                        id="previous_class"
-                        name="previous_class"
-                        type="text"
-                        value={formData.previous_class}
-                        onChange={handleChange}
-                        placeholder="e.g. Class 5"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* QURAN */}
-
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="quran_education"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Previous Quran / Hifz Education
-                      </label>
-
-                      <textarea
-                        id="quran_education"
-                        name="quran_education"
-                        rows={3}
-                        value={formData.quran_education}
-                        onChange={handleChange}
-                        placeholder="Mention Nazrah, Hifz, Qirat or other Quran education, if any."
-                        className="input-style resize-none"
-                      />
-                    </div>
                   </div>
                 </div>
 
-                {/* ===============================================
+                {/* =================================================
                     SECTION 2
-                =============================================== */}
+                ================================================= */}
 
-                <div className="border-b border-gray-200 py-8">
-                  <div className="mb-6">
+                <div className="mt-14 border-t border-gray-200 pt-12">
+                  <div className="mb-7 border-b border-gray-200 pb-4">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">
-                      Section 02
+                      Section 2
                     </p>
 
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">
-                      Parent / Guardian Information
+                      Parent / Guardian Details
                     </h3>
                   </div>
 
@@ -1234,18 +890,17 @@ export default function AdmissionPage() {
                         htmlFor="father_name"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        Father's Name *
+                        Father Name
                       </label>
 
                       <input
                         id="father_name"
                         name="father_name"
                         type="text"
-                        required
                         value={formData.father_name}
                         onChange={handleChange}
-                        placeholder="Father's full name"
-                        className="input-style"
+                        placeholder="Enter father name"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
@@ -1256,7 +911,7 @@ export default function AdmissionPage() {
                         htmlFor="mother_name"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        Mother's Name
+                        Mother Name
                       </label>
 
                       <input
@@ -1265,8 +920,8 @@ export default function AdmissionPage() {
                         type="text"
                         value={formData.mother_name}
                         onChange={handleChange}
-                        placeholder="Mother's full name"
-                        className="input-style"
+                        placeholder="Enter mother name"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
@@ -1277,18 +932,17 @@ export default function AdmissionPage() {
                         htmlFor="guardian_name"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        Guardian Full Name *
+                        Guardian Name
                       </label>
 
                       <input
                         id="guardian_name"
                         name="guardian_name"
                         type="text"
-                        required
                         value={formData.guardian_name}
                         onChange={handleChange}
-                        placeholder="Parent / guardian name"
-                        className="input-style"
+                        placeholder="Enter guardian name"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
@@ -1299,229 +953,126 @@ export default function AdmissionPage() {
                         htmlFor="guardian_relation"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        Relationship with Student *
+                        Relation with Student
                       </label>
 
-                      <select
+                      <input
                         id="guardian_relation"
                         name="guardian_relation"
-                        required
+                        type="text"
                         value={formData.guardian_relation}
                         onChange={handleChange}
-                        className="input-style"
-                      >
-                        <option value="">
-                          Select relationship
-                        </option>
-
-                        <option value="Father">
-                          Father
-                        </option>
-
-                        <option value="Mother">
-                          Mother
-                        </option>
-
-                        <option value="Brother">
-                          Brother
-                        </option>
-
-                        <option value="Uncle">
-                          Uncle
-                        </option>
-
-                        <option value="Other">
-                          Other
-                        </option>
-                      </select>
+                        placeholder="e.g. Uncle, Grandfather"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      />
                     </div>
 
-                    {/* MOBILE */}
+                    {/* CONTACT 1 */}
 
                     <div>
                       <label
-                        htmlFor="phone"
+                        htmlFor="contact_number_1"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        Mobile Number *
+                        Contact Number 1 *
                       </label>
 
                       <input
-                        id="phone"
-                        name="phone"
+                        id="contact_number_1"
+                        name="contact_number_1"
                         type="tel"
-                        inputMode="numeric"
-                        maxLength={10}
                         required
-                        value={formData.phone}
+                        value={formData.contact_number_1}
                         onChange={handleChange}
-                        placeholder="10-digit mobile number"
-                        className="input-style"
+                        placeholder="Primary contact number"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
-                    {/* WHATSAPP */}
+                    {/* CONTACT 2 */}
 
                     <div>
                       <label
-                        htmlFor="whatsapp"
+                        htmlFor="contact_number_2"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        WhatsApp Number
+                        Contact Number 2
                       </label>
 
                       <input
-                        id="whatsapp"
-                        name="whatsapp"
+                        id="contact_number_2"
+                        name="contact_number_2"
                         type="tel"
-                        inputMode="numeric"
-                        maxLength={10}
-                        value={formData.whatsapp}
+                        value={formData.contact_number_2}
                         onChange={handleChange}
-                        placeholder="10-digit WhatsApp number"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* ALTERNATE */}
-
-                    <div>
-                      <label
-                        htmlFor="alternate_phone"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Alternate Contact Number
-                      </label>
-
-                      <input
-                        id="alternate_phone"
-                        name="alternate_phone"
-                        type="tel"
-                        inputMode="numeric"
-                        maxLength={10}
-                        value={formData.alternate_phone}
-                        onChange={handleChange}
-                        placeholder="Alternate number"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* EMAIL */}
-
-                    <div>
-                      <label
-                        htmlFor="email"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Email Address
-                      </label>
-
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Email address"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* OCCUPATION */}
-
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="occupation"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Parent / Guardian Occupation
-                      </label>
-
-                      <input
-                        id="occupation"
-                        name="occupation"
-                        type="text"
-                        value={formData.occupation}
-                        onChange={handleChange}
-                        placeholder="Occupation"
-                        className="input-style"
+                        placeholder="Alternative contact number"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* ===============================================
+                {/* =================================================
                     SECTION 3
-                =============================================== */}
+                ================================================= */}
 
-                <div className="border-b border-gray-200 py-8">
-                  <div className="mb-6">
+                <div className="mt-14 border-t border-gray-200 pt-12">
+                  <div className="mb-7 border-b border-gray-200 pb-4">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">
-                      Section 03
+                      Section 3
                     </p>
 
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">
-                      Address
+                      Address Details
                     </h3>
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">
+                    {/* FULL ADDRESS */}
+
                     <div className="md:col-span-2">
                       <label
-                        htmlFor="address"
+                        htmlFor="full_address"
                         className="mb-2 block font-semibold text-gray-800"
                       >
                         Full Address *
                       </label>
 
                       <textarea
-                        id="address"
-                        name="address"
+                        id="full_address"
+                        name="full_address"
+                        required
                         rows={3}
-                        required
-                        value={formData.address}
+                        value={formData.full_address}
                         onChange={handleChange}
-                        placeholder="House number, street and complete address"
-                        className="input-style resize-none"
+                        placeholder="Enter complete residential address"
+                        className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
+
+                    {/* VILLAGE / CITY */}
 
                     <div>
                       <label
-                        htmlFor="village"
+                        htmlFor="village_city"
                         className="mb-2 block font-semibold text-gray-800"
                       >
-                        Village / Town *
+                        Village / City *
                       </label>
 
                       <input
-                        id="village"
-                        name="village"
+                        id="village_city"
+                        name="village_city"
                         type="text"
                         required
-                        value={formData.village}
+                        value={formData.village_city}
                         onChange={handleChange}
-                        className="input-style"
+                        placeholder="Village or city"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
-                    <div>
-                      <label
-                        htmlFor="post_office"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Post Office
-                      </label>
-
-                      <input
-                        id="post_office"
-                        name="post_office"
-                        type="text"
-                        value={formData.post_office}
-                        onChange={handleChange}
-                        className="input-style"
-                      />
-                    </div>
+                    {/* DISTRICT */}
 
                     <div>
                       <label
@@ -1538,9 +1089,12 @@ export default function AdmissionPage() {
                         required
                         value={formData.district}
                         onChange={handleChange}
-                        className="input-style"
+                        placeholder="District"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
+
+                    {/* STATE */}
 
                     <div>
                       <label
@@ -1557,61 +1111,45 @@ export default function AdmissionPage() {
                         required
                         value={formData.state}
                         onChange={handleChange}
-                        placeholder="e.g. Bihar"
-                        className="input-style"
+                        placeholder="State"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
 
+                    {/* PIN */}
+
                     <div>
                       <label
-                        htmlFor="pincode"
+                        htmlFor="pin_code"
                         className="mb-2 block font-semibold text-gray-800"
                       >
                         PIN Code *
                       </label>
 
                       <input
-                        id="pincode"
-                        name="pincode"
+                        id="pin_code"
+                        name="pin_code"
                         type="text"
                         inputMode="numeric"
                         maxLength={6}
                         required
-                        value={formData.pincode}
+                        value={formData.pin_code}
                         onChange={handleChange}
-                        placeholder="6-digit PIN code"
-                        className="input-style"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="country"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Country
-                      </label>
-
-                      <input
-                        id="country"
-                        name="country"
-                        type="text"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="input-style"
+                        placeholder="6 digit PIN code"
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* ===============================================
+                {/* =================================================
                     SECTION 4
-                =============================================== */}
+                ================================================= */}
 
-                <div className="border-b border-gray-200 py-8">
-                  <div className="mb-6">
+                <div className="mt-14 border-t border-gray-200 pt-12">
+                  <div className="mb-7 border-b border-gray-200 pb-4">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">
-                      Section 04
+                      Section 4
                     </p>
 
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">
@@ -1619,352 +1157,171 @@ export default function AdmissionPage() {
                     </h3>
                   </div>
 
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {/* COURSE */}
+                  <div>
+                    <label
+                      htmlFor="course"
+                      className="mb-2 block font-semibold text-gray-800"
+                    >
+                      Select Course / Program *
+                    </label>
 
-                    <div>
-                      <label
-                        htmlFor="course"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Course / Program *
-                      </label>
+                    <select
+                      id="course"
+                      name="course"
+                      required
+                      value={formData.course}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                    >
+                      <option value="">
+                        Select a course
+                      </option>
 
-                      <select
-                        id="course"
-                        name="course"
-                        required
-                        value={formData.course}
-                        onChange={handleChange}
-                        className="input-style"
-                      >
-                        <option value="">
-                          Select a course
-                        </option>
+                      <option value="Hifz-ul-Quran">
+                        Hifz-ul-Quran
+                      </option>
 
-                        <option value="Hifz-ul-Quran">
-                          Hifz-ul-Quran
-                        </option>
+                      <option value="Nazrah & Qirat">
+                        Nazrah & Qirat
+                      </option>
 
-                        <option value="Nazrah & Qirat">
-                          Nazrah & Qirat
-                        </option>
+                      <option value="Darse Nizami">
+                        Darse Nizami
+                      </option>
 
-                        <option value="Darse Nizami">
-                          Darse Nizami
-                        </option>
-
-                        <option value="Modern Education">
-                          Modern Education
-                        </option>
-                      </select>
-                    </div>
-
-                    {/* SESSION */}
-
-                    <div>
-                      <label
-                        htmlFor="academic_session"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Academic Session *
-                      </label>
-
-                      <select
-                        id="academic_session"
-                        name="academic_session"
-                        required
-                        value={formData.academic_session}
-                        onChange={handleChange}
-                        className="input-style"
-                      >
-                        <option value="2026">
-                          2026
-                        </option>
-
-                        <option value="2026-27">
-                          2026-27
-                        </option>
-                      </select>
-                    </div>
-
-                    {/* TYPE */}
-
-                    <div>
-                      <label
-                        htmlFor="admission_type"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Admission Type
-                      </label>
-
-                      <select
-                        id="admission_type"
-                        name="admission_type"
-                        value={formData.admission_type}
-                        onChange={handleChange}
-                        className="input-style"
-                      >
-                        <option value="New Admission">
-                          New Admission
-                        </option>
-
-                        <option value="Transfer">
-                          Transfer
-                        </option>
-                      </select>
-                    </div>
-
-                    {/* START DATE */}
-
-                    <div>
-                      <label
-                        htmlFor="preferred_start_date"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Preferred Start Date
-                      </label>
-
-                      <input
-                        id="preferred_start_date"
-                        name="preferred_start_date"
-                        type="date"
-                        value={
-                          formData.preferred_start_date
-                        }
-                        onChange={handleChange}
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* PREVIOUS MADRASA */}
-
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="previous_madrasa"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Previous Madrasa / Institution
-                      </label>
-
-                      <input
-                        id="previous_madrasa"
-                        name="previous_madrasa"
-                        type="text"
-                        value={formData.previous_madrasa}
-                        onChange={handleChange}
-                        placeholder="If applicable"
-                        className="input-style"
-                      />
-                    </div>
-
-                    {/* REASON */}
-
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="reason_for_admission"
-                        className="mb-2 block font-semibold text-gray-800"
-                      >
-                        Why do you want admission?
-                      </label>
-
-                      <textarea
-                        id="reason_for_admission"
-                        name="reason_for_admission"
-                        rows={4}
-                        value={
-                          formData.reason_for_admission
-                        }
-                        onChange={handleChange}
-                        placeholder="Optional"
-                        className="input-style resize-none"
-                      />
-                    </div>
+                      <option value="Modern Education">
+                        Modern Education
+                      </option>
+                    </select>
                   </div>
                 </div>
 
-                {/* ===============================================
-                    SECTION 5 DOCUMENTS
-                =============================================== */}
+                {/* =================================================
+                    SECTION 5
+                ================================================= */}
 
-                <div className="border-b border-gray-200 py-8">
-                  <div className="mb-6">
+                <div className="mt-14 border-t border-gray-200 pt-12">
+                  <div className="mb-7 border-b border-gray-200 pb-4">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">
-                      Section 05
+                      Section 5
                     </p>
 
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">
-                      Documents
+                      Required Documents
                     </h3>
 
                     <p className="mt-2 text-sm text-gray-500">
-                      JPG, PNG, WEBP or PDF • Maximum 5 MB
-                      per file.
+                      Student photo and Aadhaar card or any one valid
+                      student certificate are mandatory.
                     </p>
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">
-                    {/* PHOTO */}
+                    {/* STUDENT PHOTO */}
 
-                    <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                       <label
                         htmlFor="student_photo"
-                        className="mb-3 block font-bold text-gray-800"
+                        className="mb-2 block font-bold text-gray-800"
                       >
-                        Student Photograph *
+                        Student Photo *
                       </label>
+
+                      <p className="mb-4 text-sm leading-6 text-gray-500">
+                        JPG, PNG or WEBP. Maximum size 5MB.
+                      </p>
 
                       <input
                         id="student_photo"
+                        name="student_photo"
                         type="file"
-                        accept=".jpg,.jpeg,.png,.webp"
                         required
-                        onChange={(e) =>
-                          setStudentPhoto(
-                            e.target.files?.[0] ||
-                              null
-                          )
-                        }
-                        className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleStudentPhotoChange}
+                        className="block w-full cursor-pointer rounded-xl border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-green-700 file:px-4 file:py-3 file:font-semibold file:text-white hover:file:bg-green-800"
                       />
 
                       {studentPhoto && (
-                        <p className="mt-2 text-xs font-medium text-green-700">
-                          ✓ {studentPhoto.name}
+                        <p className="mt-3 break-all text-sm font-semibold text-green-700">
+                          ✅ {studentPhoto.name}
                         </p>
                       )}
                     </div>
 
-                    {/* BIRTH */}
+                    {/* STUDENT DOCUMENT */}
 
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                       <label
-                        htmlFor="birth_certificate"
-                        className="mb-3 block font-bold text-gray-800"
+                        htmlFor="student_document_type"
+                        className="mb-2 block font-bold text-gray-800"
                       >
-                        Birth Certificate
+                        Document Type *
                       </label>
 
-                      <input
-                        id="birth_certificate"
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.webp,.pdf"
-                        onChange={(e) =>
-                          setBirthCertificate(
-                            e.target.files?.[0] ||
-                              null
-                          )
-                        }
-                        className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
-                      />
-
-                      {birthCertificate && (
-                        <p className="mt-2 text-xs font-medium text-green-700">
-                          ✓ {birthCertificate.name}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* PREVIOUS CERTIFICATE */}
-
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                      <label
-                        htmlFor="previous_certificate"
-                        className="mb-3 block font-bold text-gray-800"
+                      <select
+                        id="student_document_type"
+                        name="student_document_type"
+                        required
+                        value={formData.student_document_type}
+                        onChange={handleChange}
+                        className="mb-4 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                       >
-                        Previous School / Madrasa Certificate
-                      </label>
+                        <option value="">
+                          Select document type
+                        </option>
+
+                        <option value="Aadhaar Card">
+                          Aadhaar Card
+                        </option>
+
+                        <option value="Birth Certificate">
+                          Birth Certificate
+                        </option>
+
+                        <option value="Previous School Certificate">
+                          Previous School Certificate
+                        </option>
+
+                        <option value="Transfer Certificate">
+                          Transfer Certificate
+                        </option>
+
+                        <option value="Other Certificate">
+                          Other Certificate
+                        </option>
+                      </select>
 
                       <input
-                        id="previous_certificate"
+                        id="student_document"
+                        name="student_document"
                         type="file"
+                        required
                         accept=".jpg,.jpeg,.png,.webp,.pdf"
-                        onChange={(e) =>
-                          setPreviousCertificate(
-                            e.target.files?.[0] ||
-                              null
-                          )
-                        }
-                        className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
+                        onChange={handleStudentDocumentChange}
+                        className="block w-full cursor-pointer rounded-xl border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-green-700 file:px-4 file:py-3 file:font-semibold file:text-white hover:file:bg-green-800"
                       />
 
-                      {previousCertificate && (
-                        <p className="mt-2 text-xs font-medium text-green-700">
-                          ✓ {previousCertificate.name}
-                        </p>
-                      )}
-                    </div>
+                      <p className="mt-3 text-sm leading-6 text-gray-500">
+                        JPG, PNG, WEBP or PDF. Maximum size 5MB.
+                      </p>
 
-                    {/* ID */}
-
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                      <label
-                        htmlFor="id_document"
-                        className="mb-3 block font-bold text-gray-800"
-                      >
-                        ID Document
-                      </label>
-
-                      <input
-                        id="id_document"
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.webp,.pdf"
-                        onChange={(e) =>
-                          setIdDocument(
-                            e.target.files?.[0] ||
-                              null
-                          )
-                        }
-                        className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
-                      />
-
-                      {idDocument && (
-                        <p className="mt-2 text-xs font-medium text-green-700">
-                          ✓ {idDocument.name}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* RESIDENCE */}
-
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 md:col-span-2">
-                      <label
-                        htmlFor="residence_proof"
-                        className="mb-3 block font-bold text-gray-800"
-                      >
-                        Residence Proof
-                      </label>
-
-                      <input
-                        id="residence_proof"
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.webp,.pdf"
-                        onChange={(e) =>
-                          setResidenceProof(
-                            e.target.files?.[0] ||
-                              null
-                          )
-                        }
-                        className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
-                      />
-
-                      {residenceProof && (
-                        <p className="mt-2 text-xs font-medium text-green-700">
-                          ✓ {residenceProof.name}
+                      {studentDocument && (
+                        <p className="mt-3 break-all text-sm font-semibold text-green-700">
+                          ✅ {studentDocument.name}
                         </p>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* ===============================================
+                {/* =================================================
                     SECTION 6
-                =============================================== */}
+                ================================================= */}
 
-                <div className="py-8">
-                  <div className="mb-6">
+                <div className="mt-14 border-t border-gray-200 pt-12">
+                  <div className="mb-7 border-b border-gray-200 pb-4">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">
-                      Section 06
+                      Section 6
                     </p>
 
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">
@@ -1972,73 +1329,45 @@ export default function AdmissionPage() {
                     </h3>
                   </div>
 
-                  {/* MESSAGE */}
-
-                  <div>
-                    <label
-                      htmlFor="message"
-                      className="mb-2 block font-semibold text-gray-800"
-                    >
-                      Additional Information
-                    </label>
-
-                    <textarea
-                      id="message"
-                      name="message"
-                      rows={4}
-                      value={formData.message}
-                      onChange={handleChange}
-                      placeholder="Any additional information you want to tell the madrasa..."
-                      className="input-style resize-none"
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-gray-50 p-5">
+                    <input
+                      type="checkbox"
+                      checked={declarationAccepted}
+                      onChange={(e) =>
+                        setDeclarationAccepted(
+                          e.target.checked
+                        )
+                      }
+                      className="mt-1 h-5 w-5 rounded border-gray-300 text-green-700 focus:ring-green-600"
                     />
-                  </div>
 
-                  {/* DECLARATION */}
-
-                  <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                    <label className="flex cursor-pointer items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={declarationAccepted}
-                        onChange={(e) =>
-                          setDeclarationAccepted(
-                            e.target.checked
-                          )
-                        }
-                        className="mt-1 h-5 w-5 rounded border-gray-300 text-green-700 focus:ring-green-600"
-                      />
-
-                      <span className="text-sm leading-7 text-gray-700">
-                        I hereby declare that the
-                        information provided in this
-                        admission form is true and correct
-                        to the best of my knowledge. I
-                        understand that providing false or
-                        misleading information may affect
-                        the admission decision. I also
-                        confirm that my parent/guardian has
-                        consented to this application.
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* SUBMIT */}
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="mt-8 w-full rounded-xl bg-green-700 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {loading
-                      ? "Submitting Application..."
-                      : "Submit Admission Application"}
-                  </button>
-
-                  <p className="mt-4 text-center text-xs text-gray-500">
-                    Please check all information carefully
-                    before submitting.
-                  </p>
+                    <span className="text-sm leading-7 text-gray-700">
+                      I confirm that the information provided in this
+                      admission application is correct to the best of
+                      my knowledge. I understand that the admission is
+                      subject to verification and approval by the
+                      madrasa administration.
+                    </span>
+                  </label>
                 </div>
+
+                {/* =================================================
+                    SUBMIT
+                ================================================= */}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-10 w-full rounded-xl bg-green-700 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading
+                    ? "Submitting Application..."
+                    : "Submit Admission Application"}
+                </button>
+
+                <p className="mt-4 text-center text-sm text-gray-500">
+                  Fields marked with * are mandatory.
+                </p>
               </form>
             </div>
           </section>
@@ -2053,9 +1382,8 @@ export default function AdmissionPage() {
             </h2>
 
             <p className="mx-auto mt-5 max-w-2xl leading-8 text-gray-300">
-              If you have any questions regarding
-              admission, courses or documents, please
-              contact our office team.
+              If you have any questions regarding admission, courses
+              or documents, please contact our office team.
             </p>
 
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
@@ -2078,33 +1406,6 @@ export default function AdmissionPage() {
       </section>
 
       <Footer />
-
-      {/* =====================================================
-          INPUT STYLE
-      ===================================================== */}
-
-      <style jsx global>{`
-        .input-style {
-          width: 100%;
-          border-radius: 0.75rem;
-          border: 1px solid #d1d5db;
-          background: #ffffff;
-          padding: 0.75rem 1rem;
-          font-weight: 500;
-          color: #111827;
-          outline: none;
-          transition: all 0.2s ease;
-        }
-
-        .input-style::placeholder {
-          color: #9ca3af;
-        }
-
-        .input-style:focus {
-          border-color: #15803d;
-          box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.1);
-        }
-      `}</style>
     </>
   );
 }
