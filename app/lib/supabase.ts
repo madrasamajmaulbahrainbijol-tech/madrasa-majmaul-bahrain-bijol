@@ -27,9 +27,7 @@ export async function uploadNoticeImage(
   file: File
 ): Promise<string> {
   if (!file) {
-    throw new Error(
-      "Image file select nahi ki gayi."
-    );
+    throw new Error("Image file select nahi ki gayi.");
   }
 
   const allowedTypes = [
@@ -55,23 +53,13 @@ export async function uploadNoticeImage(
   }
 
   const extension =
-    file.name.split(".").pop()?.toLowerCase() ||
-    "jpg";
+    file.name.split(".").pop()?.toLowerCase() || "jpg";
 
   const fileName = `${Date.now()}-${Math.random()
     .toString(36)
     .substring(2, 10)}.${extension}`;
 
   const filePath = `notices/${fileName}`;
-
-  console.log(
-    "Uploading notice image:",
-    filePath
-  );
-
-  /* =======================================================
-     UPLOAD TO SUPABASE STORAGE
-  ======================================================= */
 
   const { data: uploadData, error: uploadError } =
     await supabase.storage
@@ -99,10 +87,6 @@ export async function uploadNoticeImage(
     uploadData
   );
 
-  /* =======================================================
-     GET PUBLIC URL
-  ======================================================= */
-
   const {
     data: publicUrlData,
   } = supabase.storage
@@ -111,11 +95,6 @@ export async function uploadNoticeImage(
 
   const publicUrl =
     publicUrlData?.publicUrl || "";
-
-  console.log(
-    "Generated notice image URL:",
-    publicUrl
-  );
 
   if (!publicUrl) {
     throw new Error(
@@ -162,11 +141,6 @@ export async function deleteNoticeImage(
       return;
     }
 
-    console.log(
-      "Deleting notice image:",
-      filePath
-    );
-
     const { error } =
       await supabase.storage
         .from("notice-images")
@@ -186,6 +160,151 @@ export async function deleteNoticeImage(
   } catch (error) {
     console.error(
       "deleteNoticeImage error:",
+      error
+    );
+
+    throw error;
+  }
+}
+
+/* =========================================================
+   TEACHER IMAGE UPLOAD
+========================================================= */
+
+export async function uploadTeacherImage(
+  file: File,
+  teacherId: string
+): Promise<string> {
+  if (!file) {
+    throw new Error(
+      "Teacher photo select nahi ki gayi."
+    );
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error(
+      "Please valid image file select karein."
+    );
+  }
+
+  const maxSize = 5 * 1024 * 1024;
+
+  if (file.size > maxSize) {
+    throw new Error(
+      "Teacher image maximum 5MB ki honi chahiye."
+    );
+  }
+
+  const extension =
+    file.name.split(".").pop()?.toLowerCase() || "jpg";
+
+  const filePath =
+    `${teacherId}-${Date.now()}.${extension}`;
+
+  console.log(
+    "Teacher image upload:",
+    filePath
+  );
+
+  const { data: uploadData, error: uploadError } =
+    await supabase.storage
+      .from("teacher-images")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: file.type,
+      });
+
+  if (uploadError) {
+    console.error(
+      "Teacher image upload error:",
+      uploadError
+    );
+
+    throw new Error(
+      uploadError.message ||
+        "Teacher image upload nahi ho saki."
+    );
+  }
+
+  console.log(
+    "Teacher image uploaded:",
+    uploadData
+  );
+
+  const {
+    data: publicUrlData,
+  } = supabase.storage
+    .from("teacher-images")
+    .getPublicUrl(filePath);
+
+  const publicUrl =
+    publicUrlData?.publicUrl || "";
+
+  if (!publicUrl) {
+    throw new Error(
+      "Teacher image ka public URL nahi mila."
+    );
+  }
+
+  return publicUrl;
+}
+
+/* =========================================================
+   TEACHER IMAGE DELETE
+========================================================= */
+
+export async function deleteTeacherImage(
+  imageUrl: string
+): Promise<void> {
+  if (!imageUrl) {
+    return;
+  }
+
+  try {
+    const marker =
+      "/storage/v1/object/public/teacher-images/";
+
+    const markerIndex =
+      imageUrl.indexOf(marker);
+
+    if (markerIndex === -1) {
+      console.warn(
+        "Teacher image URL teacher-images bucket se match nahi hui."
+      );
+
+      return;
+    }
+
+    const filePath = decodeURIComponent(
+      imageUrl.substring(
+        markerIndex + marker.length
+      )
+    );
+
+    if (!filePath) {
+      return;
+    }
+
+    const { error } =
+      await supabase.storage
+        .from("teacher-images")
+        .remove([filePath]);
+
+    if (error) {
+      console.error(
+        "Teacher image delete error:",
+        error
+      );
+
+      throw new Error(
+        error.message ||
+          "Teacher image delete nahi ho saki."
+      );
+    }
+  } catch (error) {
+    console.error(
+      "deleteTeacherImage error:",
       error
     );
 
