@@ -87,7 +87,7 @@ export default function Navbar() {
               Donate
             </Link>
 
-            {/* ADMISSION */}
+            {/* PUBLIC ADMISSION FORM — NEVER LINK THIS TO THE ADMIN ADMISSIONS PANEL */}
             <Link
               href="/admission"
               className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-green-500 sm:px-5 sm:text-base"
