@@ -16,6 +16,13 @@ type FormData = {
   phone: string;
   alternate_phone: string;
   occupation: string;
+  address: string;
+  village: string;
+  post_office: string;
+  district: string;
+  state: string;
+  pincode: string;
+  country: string;
   course: string;
 };
 
@@ -30,6 +37,13 @@ const initialFormData: FormData = {
   phone: "",
   alternate_phone: "",
   occupation: "",
+  address: "",
+  village: "",
+  post_office: "",
+  district: "",
+  state: "",
+  pincode: "",
+  country: "India",
   course: "",
 };
 
@@ -117,6 +131,11 @@ export default function AdmissionPage() {
       if (clean.alternate_phone && !/^\d{10}$/.test(clean.alternate_phone)) {
         throw new Error("Please enter a valid 10-digit Mobile Number 2.");
       }
+      if (!clean.address) throw new Error("Address is required.");
+      if (!clean.village) throw new Error("Village / Town is required.");
+      if (!clean.district) throw new Error("District is required.");
+      if (!clean.state) throw new Error("State is required.");
+      if (!/^\d{6}$/.test(clean.pincode)) throw new Error("Please enter a valid 6-digit PIN code.");
       if (!clean.course) throw new Error("Please select a course.");
       if (!identityProofType) throw new Error("Please select the identity proof type.");
       if (!declarationAccepted) throw new Error("Please accept the declaration before submitting.");
@@ -128,11 +147,10 @@ export default function AdmissionPage() {
         `MMBB-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 
       /*
-       * IMPORTANT:
-       * The existing Supabase admissions table is kept untouched.
+       * The existing Supabase admissions table is not changed.
        * Only columns already used by the working admin panel are written
-       * directly to the table. The additional form details are stored in
-       * the existing message column so no schema change is required.
+       * directly. All additional application details are kept in the
+       * existing message column, so no missing-column error can occur.
        */
       const initialMessage = [
         `Application Number: ${generatedApplicationNumber}`,
@@ -144,6 +162,13 @@ export default function AdmissionPage() {
         `Mobile Number 2: ${clean.alternate_phone || "Not provided"}`,
         `Parent Occupation: ${clean.occupation || "Not provided"}`,
         `Previous Education: ${clean.previous_education || "Not provided"}`,
+        `Address: ${clean.address}`,
+        `Village / Town: ${clean.village}`,
+        `Post Office: ${clean.post_office || "Not provided"}`,
+        `District: ${clean.district}`,
+        `State: ${clean.state}`,
+        `PIN Code: ${clean.pincode}`,
+        `Country: ${clean.country || "India"}`,
         `Identity Proof Type: ${identityProofType}`,
       ].join("\n");
 
@@ -232,15 +257,9 @@ export default function AdmissionPage() {
       <section className="relative overflow-hidden bg-gradient-to-br from-green-950 via-green-800 to-green-600 px-6 py-24 text-white sm:py-28">
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 mx-auto max-w-5xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[5px] text-green-200 sm:text-base">
-            Online Admission
-          </p>
-          <h1 className="mt-5 text-4xl font-extrabold sm:text-5xl md:text-6xl">
-            Apply for Admission
-          </h1>
-          <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-green-100 sm:text-lg">
-            Please fill in the form below carefully. All information should be accurate.
-          </p>
+          <p className="text-sm font-bold uppercase tracking-[5px] text-green-200 sm:text-base">Online Admission</p>
+          <h1 className="mt-5 text-4xl font-extrabold sm:text-5xl md:text-6xl">Apply for Admission</h1>
+          <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-green-100 sm:text-lg">Please fill in the form below carefully. All information should be accurate.</p>
         </div>
       </section>
 
@@ -292,41 +311,18 @@ export default function AdmissionPage() {
                 <p className="mt-1 text-sm text-gray-500">Family and contact details.</p>
               </div>
               <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-2">
-                <div>
-                  <label className="font-bold text-gray-800">Father's Name *</label>
-                  <input name="father_name" value={formData.father_name} onChange={handleChange} required className={inputClass} />
-                </div>
-                <div>
-                  <label className="font-bold text-gray-800">Mother's Name</label>
-                  <input name="mother_name" value={formData.mother_name} onChange={handleChange} className={inputClass} />
-                </div>
-                <div>
-                  <label className="font-bold text-gray-800">Guardian Name *</label>
-                  <input name="guardian_name" value={formData.guardian_name} onChange={handleChange} required className={inputClass} />
-                </div>
+                <div><label className="font-bold text-gray-800">Father's Name *</label><input name="father_name" value={formData.father_name} onChange={handleChange} required className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">Mother's Name</label><input name="mother_name" value={formData.mother_name} onChange={handleChange} className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">Guardian Name *</label><input name="guardian_name" value={formData.guardian_name} onChange={handleChange} required className={inputClass} /></div>
                 <div>
                   <label className="font-bold text-gray-800">Relationship *</label>
                   <select name="guardian_relation" value={formData.guardian_relation} onChange={handleChange} required className={inputClass}>
-                    <option value="">Select relationship</option>
-                    <option value="Father">Father</option>
-                    <option value="Mother">Mother</option>
-                    <option value="Brother">Brother</option>
-                    <option value="Uncle">Uncle</option>
-                    <option value="Other">Other</option>
+                    <option value="">Select relationship</option><option value="Father">Father</option><option value="Mother">Mother</option><option value="Brother">Brother</option><option value="Uncle">Uncle</option><option value="Other">Other</option>
                   </select>
                 </div>
-                <div>
-                  <label className="font-bold text-gray-800">Mobile Number 1 *</label>
-                  <input name="phone" type="tel" inputMode="numeric" maxLength={10} value={formData.phone} onChange={handleChange} required className={inputClass} placeholder="10-digit mobile number" />
-                </div>
-                <div>
-                  <label className="font-bold text-gray-800">Mobile Number 2</label>
-                  <input name="alternate_phone" type="tel" inputMode="numeric" maxLength={10} value={formData.alternate_phone} onChange={handleChange} className={inputClass} placeholder="Optional" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="font-bold text-gray-800">Parent Occupation</label>
-                  <input name="occupation" value={formData.occupation} onChange={handleChange} className={inputClass} placeholder="Occupation" />
-                </div>
+                <div><label className="font-bold text-gray-800">Mobile Number 1 *</label><input name="phone" type="tel" inputMode="numeric" maxLength={10} value={formData.phone} onChange={handleChange} required className={inputClass} placeholder="10-digit mobile number" /></div>
+                <div><label className="font-bold text-gray-800">Mobile Number 2</label><input name="alternate_phone" type="tel" inputMode="numeric" maxLength={10} value={formData.alternate_phone} onChange={handleChange} className={inputClass} placeholder="Optional" /></div>
+                <div className="md:col-span-2"><label className="font-bold text-gray-800">Parent Occupation</label><input name="occupation" value={formData.occupation} onChange={handleChange} className={inputClass} placeholder="Occupation" /></div>
               </div>
             </div>
 
@@ -334,11 +330,16 @@ export default function AdmissionPage() {
               <div className="border-b border-gray-100 bg-green-50 px-6 py-6 sm:px-8">
                 <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 03</p>
                 <h2 className="mt-2 text-2xl font-extrabold text-gray-900">Address Information</h2>
+                <p className="mt-1 text-sm text-gray-500">Current residential address.</p>
               </div>
-              <div className="p-6 sm:p-8">
-                <p className="rounded-2xl bg-green-50 p-5 leading-7 text-gray-700">
-                  Address details will be collected by the office after initial application submission if required.
-                </p>
+              <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-2">
+                <div className="md:col-span-2"><label className="font-bold text-gray-800">Full Address *</label><input name="address" value={formData.address} onChange={handleChange} required className={inputClass} placeholder="House / street / locality" /></div>
+                <div><label className="font-bold text-gray-800">Village / Town *</label><input name="village" value={formData.village} onChange={handleChange} required className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">Post Office</label><input name="post_office" value={formData.post_office} onChange={handleChange} className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">District *</label><input name="district" value={formData.district} onChange={handleChange} required className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">State *</label><input name="state" value={formData.state} onChange={handleChange} required className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">PIN Code *</label><input name="pincode" type="text" inputMode="numeric" maxLength={6} value={formData.pincode} onChange={handleChange} required className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">Country</label><input name="country" value={formData.country} onChange={handleChange} className={inputClass} /></div>
               </div>
             </div>
 
@@ -346,16 +347,11 @@ export default function AdmissionPage() {
               <div className="border-b border-gray-100 bg-green-50 px-6 py-6 sm:px-8">
                 <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 04</p>
                 <h2 className="mt-2 text-2xl font-extrabold text-gray-900">Course Selection</h2>
-                <p className="mt-1 text-sm text-gray-500">Select the course for which you are applying.</p>
               </div>
               <div className="p-6 sm:p-8">
                 <label className="font-bold text-gray-800">Select Course *</label>
                 <select name="course" value={formData.course} onChange={handleChange} required className={inputClass}>
-                  <option value="">Select a course</option>
-                  <option value="Nazrah & Qirat">Nazrah & Qirat</option>
-                  <option value="Hifz-ul-Quran">Hifz-ul-Quran</option>
-                  <option value="Darse Nizami">Darse Nizami</option>
-                  <option value="Islamic & Modern Education">Islamic & Modern Education</option>
+                  <option value="">Select a course</option><option value="Nazrah & Qirat">Nazrah & Qirat</option><option value="Hifz-ul-Quran">Hifz-ul-Quran</option><option value="Darse Nizami">Darse Nizami</option><option value="Islamic & Modern Education">Islamic & Modern Education</option>
                 </select>
               </div>
             </div>
@@ -375,10 +371,7 @@ export default function AdmissionPage() {
                 <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
                   <label className="font-bold text-gray-800">Identity Proof Type *</label>
                   <select value={identityProofType} onChange={(e) => setIdentityProofType(e.target.value)} required className={inputClass}>
-                    <option value="">Select proof type</option>
-                    <option value="Aadhaar Card">Aadhaar Card</option>
-                    <option value="Birth Certificate">Birth Certificate</option>
-                    <option value="Other Valid Identity Proof">Other Valid Identity Proof</option>
+                    <option value="">Select proof type</option><option value="Aadhaar Card">Aadhaar Card</option><option value="Birth Certificate">Birth Certificate</option><option value="Other Valid Identity Proof">Other Valid Identity Proof</option>
                   </select>
                   <label className="mt-5 block font-bold text-gray-800">Upload Identity Proof *</label>
                   <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" required onChange={(e) => setIdentityProof(e.target.files?.[0] || null)} className="mt-3 block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm" />
@@ -390,9 +383,7 @@ export default function AdmissionPage() {
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl sm:p-8">
               <label className="flex cursor-pointer items-start gap-3">
                 <input type="checkbox" checked={declarationAccepted} onChange={(e) => setDeclarationAccepted(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm leading-7 text-gray-700">
-                  I hereby declare that the information provided in this admission form is true and correct. I confirm that my parent/guardian has consented to this application.
-                </span>
+                <span className="text-sm leading-7 text-gray-700">I hereby declare that the information provided in this admission form is true and correct. I confirm that my parent/guardian has consented to this application.</span>
               </label>
               <button type="submit" disabled={loading} className="mt-7 w-full rounded-xl bg-green-700 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60">
                 {loading ? "Submitting Application..." : "Submit Admission Application"}
@@ -400,9 +391,7 @@ export default function AdmissionPage() {
             </div>
           </form>
 
-          <div className="mt-12 text-center">
-            <Link href="/" className="font-bold text-green-700 hover:text-green-800">← Back to Website</Link>
-          </div>
+          <div className="mt-12 text-center"><Link href="/" className="font-bold text-green-700 hover:text-green-800">← Back to Website</Link></div>
         </div>
       </section>
 
