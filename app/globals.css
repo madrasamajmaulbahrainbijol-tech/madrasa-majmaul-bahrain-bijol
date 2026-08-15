@@ -71,7 +71,7 @@ body {
   /* The application's existing print-hidden header contains the official
      admission heading, application number, student name and uploaded photo.
      Show that header only while printing. */
-  .admission-card.print-target > .print-hidden {
+  .admission-card.print-target.print-target > .print-hidden {
     display: block !important;
     visibility: visible !important;
     background: #ffffff !important;
@@ -79,8 +79,8 @@ body {
     padding: 5mm 5mm 3.5mm !important;
   }
 
-  .admission-card.print-target > .print-hidden button,
-  .admission-card.print-target > .print-hidden a {
+  .admission-card.print-target.print-target > .print-hidden button,
+  .admission-card.print-target.print-target > .print-hidden a {
     display: none !important;
   }
 
