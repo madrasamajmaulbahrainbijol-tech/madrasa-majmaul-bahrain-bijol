@@ -194,6 +194,7 @@ export default function AdmissionPage() {
         .from("admissions")
         .insert({
           id: submissionId,
+          student_id: null,
           student_name: clean.full_name,
           guardian_name: clean.guardian_name,
           mobile: clean.phone,
