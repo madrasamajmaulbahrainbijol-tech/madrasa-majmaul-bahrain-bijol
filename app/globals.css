@@ -29,13 +29,15 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 6mm;
+    margin: 7mm 8mm 8mm;
   }
 
   html,
   body {
     width: 100% !important;
     min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
     color: #111827 !important;
   }
@@ -52,103 +54,171 @@ body {
   .admission-card.print-target {
     display: block !important;
     width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    border: 1px solid #d1d5db !important;
-    border-radius: 0 !important;
+    max-width: 194mm !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 2mm !important;
     box-shadow: none !important;
     overflow: visible !important;
     background: #ffffff !important;
-    font-size: 8.5pt !important;
-    line-height: 1.25 !important;
+    font-size: 8.6pt !important;
+    line-height: 1.22 !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
-  .admission-card.print-target .print-hidden {
+  /* The application's existing print-hidden header contains the official
+     admission heading, application number, student name and uploaded photo.
+     Show that header only while printing. */
+  .admission-card.print-target > .print-hidden {
+    display: block !important;
+    visibility: visible !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #d1d5db !important;
+    padding: 5mm 5mm 3.5mm !important;
+  }
+
+  .admission-card.print-target > .print-hidden button,
+  .admission-card.print-target > .print-hidden a {
     display: none !important;
   }
 
+  .admission-card.print-target > .print-hidden > div {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .admission-card.print-target > .print-hidden .gap-4 {
+    gap: 3mm !important;
+  }
+
+  .admission-card.print-target > .print-hidden .gap-3 {
+    gap: 2.5mm !important;
+  }
+
+  .admission-card.print-target > .print-hidden h2 {
+    margin-top: 1mm !important;
+    font-size: 16pt !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .admission-card.print-target > .print-hidden .text-\[10px\] {
+    font-size: 6.2pt !important;
+    letter-spacing: 2.2px !important;
+    line-height: 1.1 !important;
+  }
+
+  .admission-card.print-target > .print-hidden .text-xs {
+    font-size: 7pt !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Keep the uploaded student photograph visible in the official header. */
+  .admission-card.print-target > .print-hidden .aspect-\[4\/5\] {
+    width: 27mm !important;
+    min-width: 27mm !important;
+    height: 34mm !important;
+    border-width: 1px !important;
+    border-radius: 2mm !important;
+    box-shadow: none !important;
+  }
+
+  .admission-card.print-target > .print-hidden .aspect-\[4\/5\] + p {
+    margin-top: 1mm !important;
+    font-size: 5.8pt !important;
+    line-height: 1 !important;
+  }
+
+  /* Compact the application-number / received-date / status row. */
+  .admission-card.print-target > .print-hidden .mt-6 {
+    margin-top: 2.5mm !important;
+  }
+
+  .admission-card.print-target > .print-hidden .pt-5 {
+    padding-top: 2mm !important;
+  }
+
+  .admission-card.print-target > .print-hidden .border-t {
+    border-top-width: 1px !important;
+  }
+
+  .admission-card.print-target > .print-hidden .rounded-xl {
+    border-radius: 2mm !important;
+  }
+
+  .admission-card.print-target > .print-hidden .p-4 {
+    padding: 2mm !important;
+  }
+
+  /* Main printed content. */
   .admission-card.print-target > div:not(.print-hidden) {
-    padding: 3.5mm 4mm !important;
+    padding: 3mm 4mm !important;
   }
 
   .admission-card.print-target > div:not(.print-hidden) > div:first-child {
-    gap: 3mm !important;
+    gap: 2.5mm !important;
   }
 
   .admission-card.print-target .border-b-4 {
     border-bottom-width: 1.5px !important;
   }
 
-  /* Compact student photograph; identity proof is never printed. */
-  .admission-card.print-target .aspect-\[4\/5\] {
-    width: 25mm !important;
-    min-width: 25mm !important;
-    height: 31mm !important;
-    border-width: 1px !important;
-    border-radius: 3mm !important;
-  }
-
-  .admission-card.print-target .aspect-\[4\/5\] + p {
-    margin-top: 1mm !important;
-    font-size: 6pt !important;
-  }
-
   .admission-card.print-target h2 {
-    margin-top: 1.5mm !important;
-    font-size: 15pt !important;
+    margin-top: 1mm !important;
+    font-size: 14pt !important;
     line-height: 1.05 !important;
   }
 
   .admission-card.print-target .text-\[10px\] {
-    font-size: 6.5pt !important;
-    letter-spacing: 2px !important;
+    font-size: 6pt !important;
+    letter-spacing: 1.8px !important;
   }
 
   .admission-card.print-target .text-xs {
-    font-size: 7pt !important;
+    font-size: 6.8pt !important;
   }
 
   .admission-card.print-target > div:not(.print-hidden) .mt-6 {
-    margin-top: 3mm !important;
+    margin-top: 2.5mm !important;
   }
 
   .admission-card.print-target > div:not(.print-hidden) .pt-5 {
-    padding-top: 2.5mm !important;
+    padding-top: 2mm !important;
   }
 
   .admission-card.print-target section .rounded-xl.border.p-4,
   .admission-card.print-target section .rounded-2xl.border.p-4,
   .admission-card.print-target section .rounded-2xl.border.p-5 {
-    padding: 2.2mm !important;
-    border-radius: 2mm !important;
+    padding: 1.8mm !important;
+    border-radius: 1.7mm !important;
   }
 
   .admission-card.print-target section .mt-2 {
-    margin-top: 0.8mm !important;
+    margin-top: 0.6mm !important;
   }
 
   .admission-card.print-target section .leading-6 {
-    line-height: 1.25 !important;
+    line-height: 1.16 !important;
   }
 
   .admission-card.print-target section > div:first-child {
-    padding: 2mm 2.5mm !important;
+    padding: 1.8mm 2.2mm !important;
   }
 
   .admission-card.print-target section > div:first-child > div:first-child {
-    width: 6mm !important;
-    height: 6mm !important;
-    min-width: 6mm !important;
-    border-radius: 1.5mm !important;
-    font-size: 7pt !important;
+    width: 5.5mm !important;
+    height: 5.5mm !important;
+    min-width: 5.5mm !important;
+    border-radius: 1.2mm !important;
+    font-size: 6.5pt !important;
   }
 
   .admission-card.print-target section > div:first-child h4 {
-    font-size: 7pt !important;
-    line-height: 1.1 !important;
-    letter-spacing: 0.8px !important;
+    font-size: 6.7pt !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0.7px !important;
   }
 
   .admission-card.print-target section > div:first-child p {
@@ -156,24 +226,24 @@ body {
   }
 
   .admission-card.print-target section.mt-5 {
-    margin-top: 2.5mm !important;
+    margin-top: 2mm !important;
   }
 
   .admission-card.print-target section > div:nth-child(2) {
-    padding: 2.2mm !important;
+    padding: 1.8mm !important;
   }
 
-  /* Course already appears in Student Information. */
+  /* Course is already shown in Student Information. */
   .admission-card.print-target > div:not(.print-hidden) > section:nth-of-type(4) {
     display: none !important;
   }
 
-  /* Do not print uploaded documents or their file paths. */
+  /* Never print uploaded identity documents or file paths. */
   .admission-card.print-target > div:not(.print-hidden) > section:nth-of-type(5) {
     display: none !important;
   }
 
-  /* Verification note is for the admin workflow, not the official form. */
+  /* Verification note is an internal admin instruction, not part of the official form. */
   .admission-card.print-target > div:not(.print-hidden) > div:not(.print-hidden) {
     display: none !important;
   }
@@ -187,13 +257,13 @@ body {
   }
 
   .admission-card.print-target section p.text-sm {
-    font-size: 7.5pt !important;
-    line-height: 1.2 !important;
+    font-size: 7.1pt !important;
+    line-height: 1.14 !important;
   }
 
   .admission-card.print-target section .text-\[11px\] {
-    font-size: 6pt !important;
-    letter-spacing: 0.8px !important;
+    font-size: 5.8pt !important;
+    letter-spacing: 0.7px !important;
   }
 
   .admission-card.print-target section p {
