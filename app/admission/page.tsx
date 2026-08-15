@@ -218,11 +218,6 @@ export default function AdmissionPage() {
             state: clean.state,
             pincode: clean.pincode,
             country: clean.country || "India",
-            academic_session: "2026-27",
-            admission_type: "New Admission",
-            preferred_start_date: null,
-            previous_madrasa: null,
-            reason_for_admission: null,
             declaration_accepted: true,
           },
         ])
@@ -451,25 +446,21 @@ export default function AdmissionPage() {
               )}
 
               <form onSubmit={handleSubmit} className="mt-10 rounded-3xl bg-white p-5 shadow-2xl sm:p-8 lg:p-10">
-                {/* SECTION 1 */}
                 <div className="border-b border-gray-200 pb-8">
                   <div className="mb-6">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 01</p>
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">Student Information</h3>
                     <p className="mt-1 text-sm text-gray-500">Basic student details.</p>
                   </div>
-
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="md:col-span-2">
                       <label htmlFor="full_name" className="mb-2 block font-semibold text-gray-800">Student Name *</label>
                       <input id="full_name" name="full_name" type="text" required value={formData.full_name} onChange={handleChange} placeholder="Enter student's full name" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="date_of_birth" className="mb-2 block font-semibold text-gray-800">Date of Birth *</label>
                       <input id="date_of_birth" name="date_of_birth" type="date" required value={formData.date_of_birth} onChange={handleChange} className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="previous_education" className="mb-2 block font-semibold text-gray-800">Previous Education</label>
                       <input id="previous_education" name="previous_education" type="text" value={formData.previous_education} onChange={handleChange} placeholder="School / Madrasa and class" className="input-style" />
@@ -477,29 +468,24 @@ export default function AdmissionPage() {
                   </div>
                 </div>
 
-                {/* SECTION 2 */}
                 <div className="border-b border-gray-200 py-8">
                   <div className="mb-6">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 02</p>
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">Parent / Guardian Information</h3>
                   </div>
-
                   <div className="grid gap-6 md:grid-cols-2">
                     <div>
                       <label htmlFor="father_name" className="mb-2 block font-semibold text-gray-800">Father's Name *</label>
                       <input id="father_name" name="father_name" type="text" required value={formData.father_name} onChange={handleChange} placeholder="Father's full name" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="mother_name" className="mb-2 block font-semibold text-gray-800">Mother's Name</label>
                       <input id="mother_name" name="mother_name" type="text" value={formData.mother_name} onChange={handleChange} placeholder="Mother's full name" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="guardian_name" className="mb-2 block font-semibold text-gray-800">Guardian Name *</label>
                       <input id="guardian_name" name="guardian_name" type="text" required value={formData.guardian_name} onChange={handleChange} placeholder="Parent / guardian name" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="guardian_relation" className="mb-2 block font-semibold text-gray-800">Relationship *</label>
                       <select id="guardian_relation" name="guardian_relation" required value={formData.guardian_relation} onChange={handleChange} className="input-style">
@@ -511,17 +497,14 @@ export default function AdmissionPage() {
                         <option value="Other">Other</option>
                       </select>
                     </div>
-
                     <div>
                       <label htmlFor="phone" className="mb-2 block font-semibold text-gray-800">Mobile Number 1 *</label>
                       <input id="phone" name="phone" type="tel" inputMode="numeric" maxLength={10} required value={formData.phone} onChange={handleChange} placeholder="10-digit mobile number" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="alternate_phone" className="mb-2 block font-semibold text-gray-800">Mobile Number 2</label>
                       <input id="alternate_phone" name="alternate_phone" type="tel" inputMode="numeric" maxLength={10} value={formData.alternate_phone} onChange={handleChange} placeholder="Alternate mobile number" className="input-style" />
                     </div>
-
                     <div className="md:col-span-2">
                       <label htmlFor="occupation" className="mb-2 block font-semibold text-gray-800">Parent Occupation</label>
                       <input id="occupation" name="occupation" type="text" value={formData.occupation} onChange={handleChange} placeholder="Occupation" className="input-style" />
@@ -529,44 +512,36 @@ export default function AdmissionPage() {
                   </div>
                 </div>
 
-                {/* SECTION 3 */}
                 <div className="border-b border-gray-200 py-8">
                   <div className="mb-6">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 03</p>
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">Address</h3>
                   </div>
-
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="md:col-span-2">
                       <label htmlFor="address" className="mb-2 block font-semibold text-gray-800">Full Address *</label>
                       <textarea id="address" name="address" rows={3} required value={formData.address} onChange={handleChange} placeholder="House number, street and complete address" className="input-style resize-none" />
                     </div>
-
                     <div>
                       <label htmlFor="village" className="mb-2 block font-semibold text-gray-800">Village / Town *</label>
                       <input id="village" name="village" type="text" required value={formData.village} onChange={handleChange} className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="post_office" className="mb-2 block font-semibold text-gray-800">Post Office</label>
                       <input id="post_office" name="post_office" type="text" value={formData.post_office} onChange={handleChange} className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="district" className="mb-2 block font-semibold text-gray-800">District *</label>
                       <input id="district" name="district" type="text" required value={formData.district} onChange={handleChange} className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="state" className="mb-2 block font-semibold text-gray-800">State *</label>
                       <input id="state" name="state" type="text" required value={formData.state} onChange={handleChange} placeholder="e.g. Bihar" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="pincode" className="mb-2 block font-semibold text-gray-800">PIN Code *</label>
                       <input id="pincode" name="pincode" type="text" inputMode="numeric" maxLength={6} required value={formData.pincode} onChange={handleChange} placeholder="6-digit PIN code" className="input-style" />
                     </div>
-
                     <div>
                       <label htmlFor="country" className="mb-2 block font-semibold text-gray-800">Country</label>
                       <input id="country" name="country" type="text" value={formData.country} onChange={handleChange} className="input-style" />
@@ -574,14 +549,12 @@ export default function AdmissionPage() {
                   </div>
                 </div>
 
-                {/* SECTION 4 */}
                 <div className="border-b border-gray-200 py-8">
                   <div className="mb-6">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 04</p>
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">Course Selection</h3>
                     <p className="mt-1 text-sm text-gray-500">Select the course for which you are applying.</p>
                   </div>
-
                   <div>
                     <label htmlFor="course" className="mb-2 block font-semibold text-gray-800">Course / Program *</label>
                     <select id="course" name="course" required value={formData.course} onChange={handleChange} className="input-style">
@@ -594,21 +567,18 @@ export default function AdmissionPage() {
                   </div>
                 </div>
 
-                {/* SECTION 5 */}
                 <div className="py-8">
                   <div className="mb-6">
                     <p className="text-sm font-bold uppercase tracking-[3px] text-green-600">Section 05</p>
                     <h3 className="mt-2 text-2xl font-extrabold text-gray-900">Student Photo & Identity Proof</h3>
                     <p className="mt-2 text-sm text-gray-500">Both documents are mandatory. JPG, PNG, WEBP or PDF • Maximum 5 MB per file.</p>
                   </div>
-
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
                       <label htmlFor="student_photo" className="mb-3 block font-bold text-gray-800">Student Photograph *</label>
                       <input id="student_photo" type="file" accept=".jpg,.jpeg,.png,.webp" required onChange={(e) => setStudentPhoto(e.target.files?.[0] || null)} className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm" />
                       {studentPhoto && <p className="mt-2 text-xs font-medium text-green-700">✓ {studentPhoto.name}</p>}
                     </div>
-
                     <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
                       <label htmlFor="identity_proof_type" className="mb-3 block font-bold text-gray-800">Identity Proof Type *</label>
                       <select id="identity_proof_type" value={identityProofType} onChange={(e) => setIdentityProofType(e.target.value)} required className="input-style">
@@ -617,13 +587,11 @@ export default function AdmissionPage() {
                         <option value="Birth Certificate">Birth Certificate</option>
                         <option value="Other Valid Identity Proof">Other Valid Identity Proof</option>
                       </select>
-
                       <label htmlFor="identity_proof" className="mb-3 mt-4 block font-bold text-gray-800">Upload Identity Proof *</label>
                       <input id="identity_proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" required onChange={(e) => setIdentityProof(e.target.files?.[0] || null)} className="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm" />
                       {identityProof && <p className="mt-2 text-xs font-medium text-green-700">✓ {identityProof.name}</p>}
                     </div>
                   </div>
-
                   <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
                     <label className="flex cursor-pointer items-start gap-3">
                       <input type="checkbox" checked={declarationAccepted} onChange={(e) => setDeclarationAccepted(e.target.checked)} className="mt-1 h-5 w-5 rounded border-gray-300 text-green-700 focus:ring-green-600" />
@@ -632,11 +600,9 @@ export default function AdmissionPage() {
                       </span>
                     </label>
                   </div>
-
                   <button type="submit" disabled={loading} className="mt-8 w-full rounded-xl bg-green-700 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60">
                     {loading ? "Submitting Application..." : "Submit Admission Application"}
                   </button>
-
                   <p className="mt-4 text-center text-xs text-gray-500">Please check all information carefully before submitting.</p>
                 </div>
               </form>
