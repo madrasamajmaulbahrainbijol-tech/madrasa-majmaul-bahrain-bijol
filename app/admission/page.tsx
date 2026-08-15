@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
-import { supabase } from "../lib/supabase/client";
+import { publicSupabase } from "../lib/supabase/public";
 
 type FormData = {
   full_name: string;
@@ -50,6 +50,38 @@ const initialFormData: FormData = {
 const inputClass =
   "mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 font-medium text-gray-900 outline-none transition focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-100";
 
+function validateFile(file: File | null, photo = false) {
+  if (!file) {
+    throw new Error(
+      photo ? "Student photo is required." : "Identity proof is required."
+    );
+  }
+
+  const allowed = photo
+    ? ["image/jpeg", "image/png", "image/webp"]
+    : ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+  if (!allowed.includes(file.type)) {
+    throw new Error(
+      photo
+        ? "Student photo must be JPG, PNG or WEBP."
+        : "Identity proof must be JPG, PNG, WEBP or PDF."
+    );
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error(`"${file.name}" is larger than 5 MB.`);
+  }
+}
+
+function getStoragePath(folder: string, submissionId: string, file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "file";
+  const fileName = `${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 10)}.${extension}`;
+  return `${folder}/${submissionId}/${fileName}`;
+}
+
 export default function AdmissionPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [studentPhoto, setStudentPhoto] = useState<File | null>(null);
@@ -68,34 +100,8 @@ export default function AdmissionPage() {
     setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  function validateFile(file: File | null, photo = false) {
-    if (!file) {
-      throw new Error(photo ? "Student photo is required." : "Identity proof is required.");
-    }
-
-    const allowed = photo
-      ? ["image/jpeg", "image/png", "image/webp"]
-      : ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-
-    if (!allowed.includes(file.type)) {
-      throw new Error(
-        photo
-          ? "Student photo must be JPG, PNG or WEBP."
-          : "Identity proof must be JPG, PNG, WEBP or PDF."
-      );
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error(`"${file.name}" is larger than 5 MB.`);
-    }
-  }
-
-  async function uploadDocument(file: File, folder: string, admissionId: string) {
-    const extension = file.name.split(".").pop()?.toLowerCase() || "file";
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
-    const path = `${folder}/${admissionId}/${fileName}`;
-
-    const { error } = await supabase.storage
+  async function uploadDocument(file: File, path: string) {
+    const { error } = await publicSupabase.storage
       .from("admission-documents")
       .upload(path, file, {
         cacheControl: "3600",
@@ -106,8 +112,6 @@ export default function AdmissionPage() {
     if (error) {
       throw new Error(`Document upload failed: ${error.message}`);
     }
-
-    return path;
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -126,33 +130,45 @@ export default function AdmissionPage() {
       if (!clean.date_of_birth) throw new Error("Date of birth is required.");
       if (!clean.father_name) throw new Error("Father's name is required.");
       if (!clean.guardian_name) throw new Error("Guardian name is required.");
-      if (!clean.guardian_relation) throw new Error("Guardian relationship is required.");
-      if (!/^\d{10}$/.test(clean.phone)) throw new Error("Please enter a valid 10-digit Mobile Number 1.");
-      if (clean.alternate_phone && !/^\d{10}$/.test(clean.alternate_phone)) {
+      if (!clean.guardian_relation)
+        throw new Error("Guardian relationship is required.");
+      if (!/^\d{10}$/.test(clean.phone))
+        throw new Error("Please enter a valid 10-digit Mobile Number 1.");
+      if (clean.alternate_phone && !/^\d{10}$/.test(clean.alternate_phone))
         throw new Error("Please enter a valid 10-digit Mobile Number 2.");
-      }
       if (!clean.address) throw new Error("Address is required.");
       if (!clean.village) throw new Error("Village / Town is required.");
       if (!clean.district) throw new Error("District is required.");
       if (!clean.state) throw new Error("State is required.");
-      if (!/^\d{6}$/.test(clean.pincode)) throw new Error("Please enter a valid 6-digit PIN code.");
+      if (!/^\d{6}$/.test(clean.pincode))
+        throw new Error("Please enter a valid 6-digit PIN code.");
       if (!clean.course) throw new Error("Please select a course.");
-      if (!identityProofType) throw new Error("Please select the identity proof type.");
-      if (!declarationAccepted) throw new Error("Please accept the declaration before submitting.");
+      if (!identityProofType)
+        throw new Error("Please select the identity proof type.");
+      if (!declarationAccepted)
+        throw new Error("Please accept the declaration before submitting.");
 
       validateFile(studentPhoto, true);
       validateFile(identityProof, false);
 
+      const submissionId = crypto.randomUUID();
       const generatedApplicationNumber =
-        `MMBB-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        `MMBB-${new Date().getFullYear()}-${Math.floor(
+          100000 + Math.random() * 900000
+        )}`;
 
-      /*
-       * The existing Supabase admissions table is not changed.
-       * Only columns already used by the working admin panel are written
-       * directly. All additional application details are kept in the
-       * existing message column, so no missing-column error can occur.
-       */
-      const initialMessage = [
+      const studentPhotoPath = getStoragePath(
+        "student-photos",
+        submissionId,
+        studentPhoto as File
+      );
+      const identityProofPath = getStoragePath(
+        "id-documents",
+        submissionId,
+        identityProof as File
+      );
+
+      const message = [
         `Application Number: ${generatedApplicationNumber}`,
         `Father's Name: ${clean.father_name}`,
         `Mother's Name: ${clean.mother_name || "Not provided"}`,
@@ -170,59 +186,31 @@ export default function AdmissionPage() {
         `PIN Code: ${clean.pincode}`,
         `Country: ${clean.country || "India"}`,
         `Identity Proof Type: ${identityProofType}`,
+        `Student Photo: ${studentPhotoPath}`,
+        `Identity Proof: ${identityProofPath}`,
       ].join("\n");
 
-      const { data: admission, error: insertError } = await supabase
+      const { error: insertError } = await publicSupabase
         .from("admissions")
         .insert({
+          id: submissionId,
           student_name: clean.full_name,
           guardian_name: clean.guardian_name,
           mobile: clean.phone,
           email: null,
           course: clean.course,
-          message: initialMessage,
+          message,
           date_of_birth: clean.date_of_birth,
           status: "new",
-        })
-        .select("id")
-        .single();
+        });
 
       if (insertError) {
         console.error("Supabase admission insert error:", insertError);
         throw new Error(insertError.message);
       }
 
-      if (!admission?.id) {
-        throw new Error("Admission application ID could not be generated.");
-      }
-
-      const studentPhotoPath = await uploadDocument(
-        studentPhoto as File,
-        "student-photos",
-        admission.id
-      );
-
-      const identityProofPath = await uploadDocument(
-        identityProof as File,
-        "id-documents",
-        admission.id
-      );
-
-      const finalMessage = [
-        initialMessage,
-        `Student Photo: ${studentPhotoPath}`,
-        `Identity Proof: ${identityProofPath}`,
-      ].join("\n");
-
-      const { error: messageUpdateError } = await supabase
-        .from("admissions")
-        .update({ message: finalMessage })
-        .eq("id", admission.id);
-
-      if (messageUpdateError) {
-        console.error("Admission details update error:", messageUpdateError);
-        throw new Error(messageUpdateError.message);
-      }
+      await uploadDocument(studentPhoto as File, studentPhotoPath);
+      await uploadDocument(identityProof as File, identityProofPath);
 
       setApplicationNumber(generatedApplicationNumber);
       setSuccessMessage(
@@ -293,14 +281,8 @@ export default function AdmissionPage() {
                   <label className="font-bold text-gray-800">Student Name *</label>
                   <input name="full_name" value={formData.full_name} onChange={handleChange} required className={inputClass} placeholder="Enter student's full name" />
                 </div>
-                <div>
-                  <label className="font-bold text-gray-800">Date of Birth *</label>
-                  <input name="date_of_birth" type="date" value={formData.date_of_birth} onChange={handleChange} required className={inputClass} />
-                </div>
-                <div>
-                  <label className="font-bold text-gray-800">Previous Education</label>
-                  <input name="previous_education" value={formData.previous_education} onChange={handleChange} className={inputClass} placeholder="School / Madrasa / Class" />
-                </div>
+                <div><label className="font-bold text-gray-800">Date of Birth *</label><input name="date_of_birth" type="date" value={formData.date_of_birth} onChange={handleChange} required className={inputClass} /></div>
+                <div><label className="font-bold text-gray-800">Previous Education</label><input name="previous_education" value={formData.previous_education} onChange={handleChange} className={inputClass} placeholder="School / Madrasa / Class" /></div>
               </div>
             </div>
 
@@ -314,12 +296,7 @@ export default function AdmissionPage() {
                 <div><label className="font-bold text-gray-800">Father's Name *</label><input name="father_name" value={formData.father_name} onChange={handleChange} required className={inputClass} /></div>
                 <div><label className="font-bold text-gray-800">Mother's Name</label><input name="mother_name" value={formData.mother_name} onChange={handleChange} className={inputClass} /></div>
                 <div><label className="font-bold text-gray-800">Guardian Name *</label><input name="guardian_name" value={formData.guardian_name} onChange={handleChange} required className={inputClass} /></div>
-                <div>
-                  <label className="font-bold text-gray-800">Relationship *</label>
-                  <select name="guardian_relation" value={formData.guardian_relation} onChange={handleChange} required className={inputClass}>
-                    <option value="">Select relationship</option><option value="Father">Father</option><option value="Mother">Mother</option><option value="Brother">Brother</option><option value="Uncle">Uncle</option><option value="Other">Other</option>
-                  </select>
-                </div>
+                <div><label className="font-bold text-gray-800">Relationship *</label><select name="guardian_relation" value={formData.guardian_relation} onChange={handleChange} required className={inputClass}><option value="">Select relationship</option><option value="Father">Father</option><option value="Mother">Mother</option><option value="Brother">Brother</option><option value="Uncle">Uncle</option><option value="Other">Other</option></select></div>
                 <div><label className="font-bold text-gray-800">Mobile Number 1 *</label><input name="phone" type="tel" inputMode="numeric" maxLength={10} value={formData.phone} onChange={handleChange} required className={inputClass} placeholder="10-digit mobile number" /></div>
                 <div><label className="font-bold text-gray-800">Mobile Number 2</label><input name="alternate_phone" type="tel" inputMode="numeric" maxLength={10} value={formData.alternate_phone} onChange={handleChange} className={inputClass} placeholder="Optional" /></div>
                 <div className="md:col-span-2"><label className="font-bold text-gray-800">Parent Occupation</label><input name="occupation" value={formData.occupation} onChange={handleChange} className={inputClass} placeholder="Occupation" /></div>
@@ -351,7 +328,11 @@ export default function AdmissionPage() {
               <div className="p-6 sm:p-8">
                 <label className="font-bold text-gray-800">Select Course *</label>
                 <select name="course" value={formData.course} onChange={handleChange} required className={inputClass}>
-                  <option value="">Select a course</option><option value="Nazrah & Qirat">Nazrah & Qirat</option><option value="Hifz-ul-Quran">Hifz-ul-Quran</option><option value="Darse Nizami">Darse Nizami</option><option value="Islamic & Modern Education">Islamic & Modern Education</option>
+                  <option value="">Select a course</option>
+                  <option value="Nazrah & Qirat">Nazrah & Qirat</option>
+                  <option value="Hifz-ul-Quran">Hifz-ul-Quran</option>
+                  <option value="Darse Nizami">Darse Nizami</option>
+                  <option value="Islamic & Modern Education">Islamic & Modern Education</option>
                 </select>
               </div>
             </div>
@@ -371,7 +352,10 @@ export default function AdmissionPage() {
                 <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
                   <label className="font-bold text-gray-800">Identity Proof Type *</label>
                   <select value={identityProofType} onChange={(e) => setIdentityProofType(e.target.value)} required className={inputClass}>
-                    <option value="">Select proof type</option><option value="Aadhaar Card">Aadhaar Card</option><option value="Birth Certificate">Birth Certificate</option><option value="Other Valid Identity Proof">Other Valid Identity Proof</option>
+                    <option value="">Select proof type</option>
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="Birth Certificate">Birth Certificate</option>
+                    <option value="Other Valid Identity Proof">Other Valid Identity Proof</option>
                   </select>
                   <label className="mt-5 block font-bold text-gray-800">Upload Identity Proof *</label>
                   <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" required onChange={(e) => setIdentityProof(e.target.files?.[0] || null)} className="mt-3 block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm" />
