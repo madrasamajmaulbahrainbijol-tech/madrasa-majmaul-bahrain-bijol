@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
 
       const [{ count: pending }, { count: history }, { count: students }, { count: enquiries }, { count: teachers }, { count: notices }] = await Promise.all([
         supabase.from("admissions").select("id", { count: "exact", head: true }).eq("status", "new"),
-        supabase.from("admissions").select("id", { count: "exact", head: true }).or("status.neq.new,account_status.eq.inactive"),
+        supabase.from("admissions").select("id", { count: "exact", head: true }).or("status.neq.approved,account_status.neq.approved"),
         supabase.from("admissions").select("id", { count: "exact", head: true }).eq("status", "approved").eq("account_status", "approved"),
         supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
         supabase.from("teachers").select("id", { count: "exact", head: true }),
@@ -59,15 +59,16 @@ export default function AdminDashboardPage() {
       <header className="border-b border-gray-200 bg-white shadow-sm"><div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"><div><p className="text-sm font-semibold text-green-700">Madrasa Majmaul Bahrain Bijol</p><h1 className="mt-1 text-2xl font-bold text-gray-900">Admin Dashboard</h1></div><button onClick={logout} className="rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700">Logout</button></div></header>
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-2xl bg-gradient-to-r from-green-800 to-green-600 p-6 text-white shadow-lg"><p className="text-sm text-green-100">Welcome back</p><h2 className="mt-1 text-2xl font-bold">Madrasa Administration Panel</h2><p className="mt-2 text-sm text-green-100">Logged in as: {email}</p></div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+          <Card icon="➕" title="Take Admission" text="Fill an admission form directly at the office on behalf of a guardian." count={0} label="New Form" color="bg-emerald-100" href="/admin/admissions/take" />
           <Card icon="🎓" title="Admissions" text="Only untouched applications waiting for a decision." count={admissionCount} label="Pending" color="bg-green-100" href="/admin/admissions" />
-          <Card icon="🗂️" title="Application History" text="Rejected, reviewed, approved-inactive and other saved records." count={historyCount} label="Records" color="bg-slate-100" href="/admin/students" />
+          <Card icon="🗂️" title="Application History" text="Rejected, reviewed, inactive and other non-current records." count={historyCount} label="Records" color="bg-slate-100" href="/admin/students" />
           <Card icon="👨‍🎓" title="Students" text="Only currently approved and active students." count={studentCount} label="Active" color="bg-purple-100" href="/admin/students" />
           <Card icon="📩" title="Enquiries" text="New website enquiries waiting for attention." count={enquiryCount} label="New" color="bg-blue-100" href="/admin/enquiries" />
           <Card icon="👨‍🏫" title="Teachers" text="Manage madrasa teachers and profiles." count={teacherCount} label="Teachers" color="bg-emerald-100" href="/admin/teachers" />
           <Card icon="📢" title="Notices" text="Create and manage madrasa notices." count={noticeCount} label="Notices" color="bg-amber-100" href="/admin/notices" />
         </div>
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-bold text-gray-900">Management Rules</h3><div className="mt-4 grid gap-4 md:grid-cols-3"><div className="rounded-xl bg-green-50 p-4"><p className="font-black text-green-800">Admissions</p><p className="mt-1 text-sm text-green-900">Only new applications appear here until an admin takes a decision.</p></div><div className="rounded-xl bg-purple-50 p-4"><p className="font-black text-purple-800">Students</p><p className="mt-1 text-sm text-purple-900">Only approved + active accounts count as current students.</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="font-black text-slate-800">History</p><p className="mt-1 text-sm text-slate-700">Old records remain searchable until an admin intentionally hard-deletes them.</p></div></div></div>
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-bold text-gray-900">Management Rules</h3><div className="mt-4 grid gap-4 md:grid-cols-4"><div className="rounded-xl bg-emerald-50 p-4"><p className="font-black text-emerald-800">Take Admission</p><p className="mt-1 text-sm text-emerald-900">Office staff can enter a guardian's form directly. It still follows the normal approval workflow.</p></div><div className="rounded-xl bg-green-50 p-4"><p className="font-black text-green-800">Admissions</p><p className="mt-1 text-sm text-green-900">Only new applications appear here until an admin takes a decision.</p></div><div className="rounded-xl bg-purple-50 p-4"><p className="font-black text-purple-800">Students</p><p className="mt-1 text-sm text-purple-900">Only approved + active accounts count as current students.</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="font-black text-slate-800">History</p><p className="mt-1 text-sm text-slate-700">Current approved + active students never appear in history. Old/non-current records remain searchable until intentionally deleted.</p></div></div></div>
       </section>
     </main>
   );
