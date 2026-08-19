@@ -19,10 +19,108 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(21, 128, 61, 0.18);
+  color: #14532d;
+}
+
+/* Lightweight site-wide depth and motion. It intentionally stays subtle so
+   the madrasa site feels premium rather than over-animated. */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+a {
+  transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+button:not(:disabled):hover,
+a:hover {
+  transition-duration: 180ms;
+}
+
+/* Existing Tailwind shadow cards get a restrained 3D lift without requiring
+   every existing component to be rewritten. */
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 280ms ease;
+}
+
+.shadow-lg:hover,
+.shadow-xl:hover,
+.shadow-2xl:hover {
+  transform: translateY(-3px) perspective(900px) rotateX(0.35deg);
+}
+
+/* Gentle image polish across cards and galleries. */
+img {
+  backface-visibility: hidden;
+}
+
+/* Utility classes for sections that want a controlled reveal / floating depth. */
+.premium-reveal {
+  animation: premiumReveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.premium-float {
+  animation: premiumFloat 5s ease-in-out infinite;
+}
+
+.premium-glow {
+  box-shadow: 0 18px 55px rgba(22, 101, 52, 0.12), 0 5px 18px rgba(15, 23, 42, 0.08);
+}
+
+@keyframes premiumReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes premiumFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Professional one-page admission print. Screen design is unchanged. */
@@ -60,6 +158,7 @@ body {
     border: 1px solid #cbd5e1 !important;
     border-radius: 2mm !important;
     box-shadow: none !important;
+    transform: none !important;
     overflow: visible !important;
     background: #ffffff !important;
     font-size: 8.6pt !important;
@@ -68,9 +167,6 @@ body {
     page-break-inside: avoid !important;
   }
 
-  /* The application's existing print-hidden header contains the official
-     admission heading, application number, student name and uploaded photo.
-     Show that header only while printing. */
   .admission-card.print-target.print-target > .print-hidden {
     display: block !important;
     visibility: visible !important;
@@ -89,190 +185,46 @@ body {
     max-width: none !important;
   }
 
-  .admission-card.print-target > .print-hidden .gap-4 {
-    gap: 3mm !important;
-  }
-
-  .admission-card.print-target > .print-hidden .gap-3 {
-    gap: 2.5mm !important;
-  }
-
-  .admission-card.print-target > .print-hidden h2 {
-    margin-top: 1mm !important;
-    font-size: 16pt !important;
-    line-height: 1.05 !important;
-    letter-spacing: -0.2px !important;
-  }
-
-  .admission-card.print-target > .print-hidden .text-\[10px\] {
-    font-size: 6.2pt !important;
-    letter-spacing: 2.2px !important;
-    line-height: 1.1 !important;
-  }
-
-  .admission-card.print-target > .print-hidden .text-xs {
-    font-size: 7pt !important;
-    line-height: 1.2 !important;
-  }
-
-  /* Keep the uploaded student photograph visible in the official header. */
-  .admission-card.print-target > .print-hidden .aspect-\[4\/5\] {
-    width: 27mm !important;
-    min-width: 27mm !important;
-    height: 34mm !important;
-    border-width: 1px !important;
-    border-radius: 2mm !important;
-    box-shadow: none !important;
-  }
-
-  .admission-card.print-target > .print-hidden .aspect-\[4\/5\] + p {
-    margin-top: 1mm !important;
-    font-size: 5.8pt !important;
-    line-height: 1 !important;
-  }
-
-  /* Compact the application-number / received-date / status row. */
-  .admission-card.print-target > .print-hidden .mt-6 {
-    margin-top: 2.5mm !important;
-  }
-
-  .admission-card.print-target > .print-hidden .pt-5 {
-    padding-top: 2mm !important;
-  }
-
-  .admission-card.print-target > .print-hidden .border-t {
-    border-top-width: 1px !important;
-  }
-
-  .admission-card.print-target > .print-hidden .rounded-xl {
-    border-radius: 2mm !important;
-  }
-
-  .admission-card.print-target > .print-hidden .p-4 {
-    padding: 2mm !important;
-  }
-
-  /* Main printed content. */
-  .admission-card.print-target > div:not(.print-hidden) {
-    padding: 3mm 4mm !important;
-  }
-
-  .admission-card.print-target > div:not(.print-hidden) > div:first-child {
-    gap: 2.5mm !important;
-  }
-
-  .admission-card.print-target .border-b-4 {
-    border-bottom-width: 1.5px !important;
-  }
-
-  .admission-card.print-target h2 {
-    margin-top: 1mm !important;
-    font-size: 14pt !important;
-    line-height: 1.05 !important;
-  }
-
-  .admission-card.print-target .text-\[10px\] {
-    font-size: 6pt !important;
-    letter-spacing: 1.8px !important;
-  }
-
-  .admission-card.print-target .text-xs {
-    font-size: 6.8pt !important;
-  }
-
-  .admission-card.print-target > div:not(.print-hidden) .mt-6 {
-    margin-top: 2.5mm !important;
-  }
-
-  .admission-card.print-target > div:not(.print-hidden) .pt-5 {
-    padding-top: 2mm !important;
-  }
-
+  .admission-card.print-target > .print-hidden .gap-4 { gap: 3mm !important; }
+  .admission-card.print-target > .print-hidden .gap-3 { gap: 2.5mm !important; }
+  .admission-card.print-target > .print-hidden h2 { margin-top: 1mm !important; font-size: 16pt !important; line-height: 1.05 !important; letter-spacing: -0.2px !important; }
+  .admission-card.print-target > .print-hidden .text-\[10px\] { font-size: 6.2pt !important; letter-spacing: 2.2px !important; line-height: 1.1 !important; }
+  .admission-card.print-target > .print-hidden .text-xs { font-size: 7pt !important; line-height: 1.2 !important; }
+  .admission-card.print-target > .print-hidden .aspect-\[4\/5\] { width: 27mm !important; min-width: 27mm !important; height: 34mm !important; border-width: 1px !important; border-radius: 2mm !important; box-shadow: none !important; }
+  .admission-card.print-target > .print-hidden .aspect-\[4\/5\] + p { margin-top: 1mm !important; font-size: 5.8pt !important; line-height: 1 !important; }
+  .admission-card.print-target > .print-hidden .mt-6 { margin-top: 2.5mm !important; }
+  .admission-card.print-target > .print-hidden .pt-5 { padding-top: 2mm !important; }
+  .admission-card.print-target > .print-hidden .border-t { border-top-width: 1px !important; }
+  .admission-card.print-target > .print-hidden .rounded-xl { border-radius: 2mm !important; }
+  .admission-card.print-target > .print-hidden .p-4 { padding: 2mm !important; }
+  .admission-card.print-target > div:not(.print-hidden) { padding: 3mm 4mm !important; }
+  .admission-card.print-target > div:not(.print-hidden) > div:first-child { gap: 2.5mm !important; }
+  .admission-card.print-target .border-b-4 { border-bottom-width: 1.5px !important; }
+  .admission-card.print-target h2 { margin-top: 1mm !important; font-size: 14pt !important; line-height: 1.05 !important; }
+  .admission-card.print-target .text-\[10px\] { font-size: 6pt !important; letter-spacing: 1.8px !important; }
+  .admission-card.print-target .text-xs { font-size: 6.8pt !important; }
+  .admission-card.print-target > div:not(.print-hidden) .mt-6 { margin-top: 2.5mm !important; }
+  .admission-card.print-target > div:not(.print-hidden) .pt-5 { padding-top: 2mm !important; }
   .admission-card.print-target section .rounded-xl.border.p-4,
   .admission-card.print-target section .rounded-2xl.border.p-4,
-  .admission-card.print-target section .rounded-2xl.border.p-5 {
-    padding: 1.8mm !important;
-    border-radius: 1.7mm !important;
-  }
-
-  .admission-card.print-target section .mt-2 {
-    margin-top: 0.6mm !important;
-  }
-
-  .admission-card.print-target section .leading-6 {
-    line-height: 1.16 !important;
-  }
-
-  .admission-card.print-target section > div:first-child {
-    padding: 1.8mm 2.2mm !important;
-  }
-
-  .admission-card.print-target section > div:first-child > div:first-child {
-    width: 5.5mm !important;
-    height: 5.5mm !important;
-    min-width: 5.5mm !important;
-    border-radius: 1.2mm !important;
-    font-size: 6.5pt !important;
-  }
-
-  .admission-card.print-target section > div:first-child h4 {
-    font-size: 6.7pt !important;
-    line-height: 1.05 !important;
-    letter-spacing: 0.7px !important;
-  }
-
-  .admission-card.print-target section > div:first-child p {
-    display: none !important;
-  }
-
-  .admission-card.print-target section.mt-5 {
-    margin-top: 2mm !important;
-  }
-
-  .admission-card.print-target section > div:nth-child(2) {
-    padding: 1.8mm !important;
-  }
-
-  /* Course is already shown in Student Information. */
-  .admission-card.print-target > div:not(.print-hidden) > section:nth-of-type(4) {
-    display: none !important;
-  }
-
-  /* Never print uploaded identity documents or file paths. */
-  .admission-card.print-target > div:not(.print-hidden) > section:nth-of-type(5) {
-    display: none !important;
-  }
-
-  /* Verification note is an internal admin instruction, not part of the official form. */
-  .admission-card.print-target > div:not(.print-hidden) > div:not(.print-hidden) {
-    display: none !important;
-  }
-
+  .admission-card.print-target section .rounded-2xl.border.p-5 { padding: 1.8mm !important; border-radius: 1.7mm !important; }
+  .admission-card.print-target section .mt-2 { margin-top: 0.6mm !important; }
+  .admission-card.print-target section .leading-6 { line-height: 1.16 !important; }
+  .admission-card.print-target section > div:first-child { padding: 1.8mm 2.2mm !important; }
+  .admission-card.print-target section > div:first-child > div:first-child { width: 5.5mm !important; height: 5.5mm !important; min-width: 5.5mm !important; border-radius: 1.2mm !important; font-size: 6.5pt !important; }
+  .admission-card.print-target section > div:first-child h4 { font-size: 6.7pt !important; line-height: 1.05 !important; letter-spacing: 0.7px !important; }
+  .admission-card.print-target section > div:first-child p { display: none !important; }
+  .admission-card.print-target section.mt-5 { margin-top: 2mm !important; }
+  .admission-card.print-target section > div:nth-child(2) { padding: 1.8mm !important; }
+  .admission-card.print-target > div:not(.print-hidden) > section:nth-of-type(4) { display: none !important; }
+  .admission-card.print-target > div:not(.print-hidden) > section:nth-of-type(5) { display: none !important; }
+  .admission-card.print-target > div:not(.print-hidden) > div:not(.print-hidden) { display: none !important; }
   .admission-card.print-target section,
   .admission-card.print-target .grid,
   .admission-card.print-target .rounded-xl,
-  .admission-card.print-target .rounded-2xl {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  .admission-card.print-target section p.text-sm {
-    font-size: 7.1pt !important;
-    line-height: 1.14 !important;
-  }
-
-  .admission-card.print-target section .text-\[11px\] {
-    font-size: 5.8pt !important;
-    letter-spacing: 0.7px !important;
-  }
-
-  .admission-card.print-target section p {
-    overflow-wrap: anywhere !important;
-  }
-
-  .print-page {
-    max-width: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
+  .admission-card.print-target .rounded-2xl { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .admission-card.print-target section p.text-sm { font-size: 7.1pt !important; line-height: 1.14 !important; }
+  .admission-card.print-target section .text-\[11px\] { font-size: 5.8pt !important; letter-spacing: 0.7px !important; }
+  .admission-card.print-target section p { overflow-wrap: anywhere !important; }
+  .print-page { max-width: none !important; padding: 0 !important; margin: 0 !important; }
 }
