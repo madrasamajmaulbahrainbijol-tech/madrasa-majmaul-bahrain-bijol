@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "Madrasa Majmaul Bahrain Bijol",
   description: "Official website of Madrasa Majmaul Bahrain Bijol.",
   icons: {
-    icon: "/mmbb-logo.svg",
-    shortcut: "/mmbb-logo.svg",
-    apple: "/mmbb-logo.svg",
+    icon: "/madrasa-logo.jpg",
+    shortcut: "/madrasa-logo.jpg",
+    apple: "/madrasa-logo.jpg",
   },
 };
 
