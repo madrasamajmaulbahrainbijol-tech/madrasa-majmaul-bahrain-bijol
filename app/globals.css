@@ -19,9 +19,7 @@
   }
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--background);
@@ -31,107 +29,99 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::selection {
-  background: rgba(21, 128, 61, 0.18);
-  color: #14532d;
-}
+::selection { background: rgba(21, 128, 61, 0.18); color: #14532d; }
 
-/* Lightweight site-wide depth and motion. It intentionally stays subtle so
-   the madrasa site feels premium rather than over-animated. */
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
+button, a { -webkit-tap-highlight-color: transparent; }
 
-button:not(:disabled),
-a {
+button:not(:disabled), a {
   transition-property: transform, box-shadow, background-color, border-color, color, opacity;
   transition-duration: 220ms;
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-button:not(:disabled):hover,
-a:hover {
-  transition-duration: 180ms;
-}
+button:not(:disabled):hover, a:hover { transition-duration: 180ms; }
 
-/* Existing Tailwind shadow cards get a restrained 3D lift without requiring
-   every existing component to be rewritten. */
-.shadow-lg,
-.shadow-xl,
-.shadow-2xl {
+.shadow-lg, .shadow-xl, .shadow-2xl {
   transform: translateZ(0);
   backface-visibility: hidden;
   transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 280ms ease;
 }
 
-.shadow-lg:hover,
-.shadow-xl:hover,
-.shadow-2xl:hover {
+.shadow-lg:hover, .shadow-xl:hover, .shadow-2xl:hover {
   transform: translateY(-3px) perspective(900px) rotateX(0.35deg);
 }
 
-/* Gentle image polish across cards and galleries. */
-img {
-  backface-visibility: hidden;
+img { backface-visibility: hidden; }
+
+/* Official-logo helpers. These are deliberately image-based, not initials/icons. */
+.official-madrasa-logo {
+  object-fit: contain !important;
+  object-position: center !important;
+  background: #ffffff !important;
 }
 
-/* Utility classes for sections that want a controlled reveal / floating depth. */
-.premium-reveal {
-  animation: premiumReveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+/* Student identity-card header: show the complete official madrasa logo. */
+.idtop {
+  position: relative !important;
 }
 
-.premium-float {
-  animation: premiumFloat 5s ease-in-out infinite;
+.idtop::before {
+  content: "";
+  display: block;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 12px;
+  border-radius: 18px;
+  background: #ffffff url("/madrasa-logo.jpg") center / contain no-repeat;
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
 }
 
-.premium-glow {
-  box-shadow: 0 18px 55px rgba(22, 101, 52, 0.12), 0 5px 18px rgba(15, 23, 42, 0.08);
+/* Admission/application cards get a compact branded mark without changing form data. */
+.admission-card {
+  position: relative;
 }
+
+.admission-card::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 62px;
+  height: 62px;
+  border-radius: 14px;
+  background: #ffffff url("/madrasa-logo.jpg") center / contain no-repeat;
+  box-shadow: 0 7px 20px rgba(15,23,42,.12);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.premium-reveal { animation: premiumReveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.premium-float { animation: premiumFloat 5s ease-in-out infinite; }
+.premium-glow { box-shadow: 0 18px 55px rgba(22, 101, 52, 0.12), 0 5px 18px rgba(15, 23, 42, 0.08); }
 
 @keyframes premiumReveal {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes premiumFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* Professional one-page admission print. Screen design is unchanged. */
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 7mm 8mm 8mm;
-  }
+  @page { size: A4 portrait; margin: 7mm 8mm 8mm; }
 
-  html,
-  body {
+  html, body {
     width: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
@@ -140,14 +130,9 @@ img {
     color: #111827 !important;
   }
 
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
+  body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-  .admission-card.print-muted {
-    display: none !important;
-  }
+  .admission-card.print-muted { display: none !important; }
 
   .admission-card.print-target {
     display: block !important;
@@ -167,6 +152,18 @@ img {
     page-break-inside: avoid !important;
   }
 
+  .admission-card.print-target::before {
+    content: "" !important;
+    position: absolute !important;
+    top: 5mm !important;
+    right: 5mm !important;
+    width: 24mm !important;
+    height: 24mm !important;
+    border-radius: 2mm !important;
+    background: #ffffff url("/madrasa-logo.jpg") center / contain no-repeat !important;
+    box-shadow: none !important;
+  }
+
   .admission-card.print-target.print-target > .print-hidden {
     display: block !important;
     visibility: visible !important;
@@ -176,15 +173,9 @@ img {
   }
 
   .admission-card.print-target.print-target > .print-hidden button,
-  .admission-card.print-target.print-target > .print-hidden a {
-    display: none !important;
-  }
+  .admission-card.print-target.print-target > .print-hidden a { display: none !important; }
 
-  .admission-card.print-target > .print-hidden > div {
-    width: 100% !important;
-    max-width: none !important;
-  }
-
+  .admission-card.print-target > .print-hidden > div { width: 100% !important; max-width: none !important; }
   .admission-card.print-target > .print-hidden .gap-4 { gap: 3mm !important; }
   .admission-card.print-target > .print-hidden .gap-3 { gap: 2.5mm !important; }
   .admission-card.print-target > .print-hidden h2 { margin-top: 1mm !important; font-size: 16pt !important; line-height: 1.05 !important; letter-spacing: -0.2px !important; }
