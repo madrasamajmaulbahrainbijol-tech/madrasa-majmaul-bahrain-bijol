@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fix-expert-polish-script.cjs && node scripts/expert-student-polish.cjs",
+    "prebuild": "node scripts/replace-logo.cjs && node scripts/fix-expert-polish-script.cjs && node scripts/expert-student-polish.cjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
