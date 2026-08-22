@@ -1,6 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc" preserveAspectRatio="xMidYMid meet">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="title desc" preserveAspectRatio="xMidYMid meet">
   <title id="title">Madrasa Majmaul Bahrain Bijol</title>
-  <desc id="desc">Official Madrasa Majmaul Bahrain Bijol logo</desc>
-  <rect width="256" height="256" fill="transparent"/>
-  <image href="/madrasa-logo.jpg" x="0" y="0" width="256" height="256" preserveAspectRatio="xMidYMid meet"/>
+  <desc id="desc">Official minimalist green and gold logo of Madrasa Majmaul Bahrain Bijol</desc>
+  <defs>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#063f28"/><stop offset="1" stop-color="#08733e"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b78316"/><stop offset=".5" stop-color="#e0b33d"/><stop offset="1" stop-color="#a8750e"/></linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#063f28" flood-opacity=".12"/></filter>
+  </defs>
+  <circle cx="500" cy="500" r="480" fill="#fff" stroke="url(#green)" stroke-width="28"/>
+  <circle cx="500" cy="500" r="447" fill="none" stroke="url(#gold)" stroke-width="7"/>
+  <circle cx="500" cy="500" r="430" fill="none" stroke="#d7b04b" stroke-width="1.5" opacity=".8"/>
+
+  <!-- Islamic arch + crescent -->
+  <path d="M355 315V205c0-94 64-145 145-177 80 32 145 83 145 177v110" fill="none" stroke="url(#green)" stroke-width="22" stroke-linecap="round"/>
+  <path d="M385 315V214c0-65 42-104 115-138 72 34 115 73 115 138v101" fill="none" stroke="url(#gold)" stroke-width="6"/>
+  <circle cx="500" cy="143" r="48" fill="url(#gold)"/>
+  <circle cx="520" cy="127" r="48" fill="#fff"/>
+  <path d="M561 112l9 19 21 3-15 15 4 21-19-10-19 10 4-21-15-15 21-3z" fill="url(#green)"/>
+
+  <!-- Open Quran -->
+  <g filter="url(#soft)">
+    <path d="M500 395c-54-55-118-71-177-51v112c61-18 123-1 177 45z" fill="#fff" stroke="url(#green)" stroke-width="12"/>
+    <path d="M500 395c54-55 118-71 177-51v112c-61-18-123-1-177 45z" fill="#fff" stroke="url(#green)" stroke-width="12"/>
+    <path d="M500 395v106" stroke="url(#gold)" stroke-width="8"/>
+    <g stroke="#c59b32" stroke-width="5" stroke-linecap="round" opacity=".9">
+      <path d="M353 374c42-12 81-4 118 17"/><path d="M353 397c42-12 81-4 118 17"/><path d="M353 420c42-12 81-4 118 17"/><path d="M647 374c-42-12-81-4-118 17"/><path d="M647 397c-42-12-81-4-118 17"/><path d="M647 420c-42-12-81-4-118 17"/>
+    </g>
+  </g>
+
+  <!-- Name -->
+  <g fill="url(#green)" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">
+    <text x="500" y="535" font-size="52" letter-spacing="18">MADRASA</text>
+    <text x="500" y="635" font-size="91" font-weight="700" letter-spacing="2">MAJMAUL</text>
+    <text x="500" y="720" font-size="82" font-weight="700" letter-spacing="4">BAHRAIN</text>
+  </g>
+  <path d="M240 750h520" stroke="url(#gold)" stroke-width="5"/>
+  <path d="M365 750h270" stroke="#fff" stroke-width="13"/>
+  <path d="M330 750l18-12 18 12-18 12zM652 750l18-12 18 12-18 12z" fill="url(#gold)"/>
+
+  <!-- Bijol ribbon -->
+  <path d="M285 775c48-18 88-18 130-5h170c42-13 82-13 130 5l-30 74H315z" fill="url(#gold)"/>
+  <path d="M315 790h370v58H315z" fill="url(#gold)" stroke="#9d6d0d" stroke-width="2"/>
+  <text x="500" y="833" fill="#fff" font-family="Georgia, 'Times New Roman', serif" font-size="43" font-weight="700" letter-spacing="16" text-anchor="middle">BIJOL</text>
+
+  <!-- Motto + book -->
+  <text x="500" y="900" fill="url(#green)" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="5" text-anchor="middle">KNOWLEDGE • FAITH • CHARACTER</text>
+  <g transform="translate(500 938)" stroke="url(#gold)" stroke-width="5" fill="#fff">
+    <path d="M0 35c-27-26-54-30-78-22V-22c25-8 52-3 78 19z"/>
+    <path d="M0 35c27-26 54-30 78-22V-22c-25-8-52-3-78 19z"/>
+    <path d="M0-3v38"/>
+  </g>
+  <!-- subtle laurel accents -->
+  <g fill="none" stroke="url(#green)" stroke-width="8" stroke-linecap="round" opacity=".95">
+    <path d="M165 795c-45 38-58 76-58 111"/><path d="M835 795c45 38 58 76 58 111"/>
+  </g>
+  <g fill="url(#green)">
+    <ellipse cx="134" cy="821" rx="12" ry="27" transform="rotate(-35 134 821)"/><ellipse cx="119" cy="854" rx="12" ry="27" transform="rotate(-18 119 854)"/><ellipse cx="112" cy="888" rx="12" ry="27"/>
+    <ellipse cx="866" cy="821" rx="12" ry="27" transform="rotate(35 866 821)"/><ellipse cx="881" cy="854" rx="12" ry="27" transform="rotate(18 881 854)"/><ellipse cx="888" cy="888" rx="12" ry="27"/>
+  </g>
 </svg>
