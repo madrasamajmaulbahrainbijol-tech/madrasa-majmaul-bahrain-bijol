@@ -8,7 +8,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "Madrasa Majmaul Bahrain Bijol",
   description: "Official website of Madrasa Majmaul Bahrain Bijol.",
-  icons: { icon: "/madrasa-logo.jpg", shortcut: "/madrasa-logo.jpg", apple: "/madrasa-logo.jpg" },
+  icons: { icon: "/mmbb-logo.svg", shortcut: "/mmbb-logo.svg", apple: "/mmbb-logo.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
