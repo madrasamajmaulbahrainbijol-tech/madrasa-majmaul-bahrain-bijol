@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/replace-logo.cjs && node scripts/fix-expert-polish-script.cjs && node scripts/expert-student-polish.cjs && node scripts/fix-print-layout.cjs && node scripts/fix-result-print.cjs && node scripts/final-marksheet-polish.cjs && node scripts/marksheet-final-polish.cjs && node scripts/a4-marksheet-spacing.cjs && node scripts/add-result-download.cjs && node scripts/expert-results-ui.cjs",
+    "prebuild": "node scripts/replace-logo.cjs && node scripts/fix-expert-polish-script.cjs && node scripts/expert-student-polish.cjs && node scripts/fix-print-layout.cjs && node scripts/fix-result-print.cjs && node scripts/final-marksheet-polish.cjs && node scripts/marksheet-final-polish.cjs && node scripts/a4-marksheet-spacing.cjs && node scripts/add-result-download.cjs && node scripts/expert-results-ui.cjs && node scripts/fix-download-and-marksheet-visibility.cjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -12,6 +12,8 @@
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.112.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.0.0",
     "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
