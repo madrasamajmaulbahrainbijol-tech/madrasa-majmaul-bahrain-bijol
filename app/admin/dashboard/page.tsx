@@ -19,9 +19,7 @@ export default function AdminDashboardPage() {
     let cancelled = false;
 
     async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         router.replace("/admin");
@@ -37,7 +35,6 @@ export default function AdminDashboardPage() {
       }
 
       if (cancelled) return;
-
       setEmail(user.email || "");
 
       const [
@@ -48,29 +45,15 @@ export default function AdminDashboardPage() {
         { count: teachers },
         { count: notices },
       ] = await Promise.all([
-        supabase
-          .from("admissions")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "new"),
-        supabase
-          .from("admissions")
-          .select("id", { count: "exact", head: true })
-          .or("status.neq.approved,account_status.neq.approved"),
-        supabase
-          .from("admissions")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "approved")
-          .eq("account_status", "approved"),
-        supabase
-          .from("enquiries")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "new"),
+        supabase.from("admissions").select("id", { count: "exact", head: true }).eq("status", "new"),
+        supabase.from("admissions").select("id", { count: "exact", head: true }).or("status.neq.approved,account_status.neq.approved"),
+        supabase.from("admissions").select("id", { count: "exact", head: true }).eq("status", "approved").eq("account_status", "approved"),
+        supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
         supabase.from("teachers").select("id", { count: "exact", head: true }),
         supabase.from("notices").select("id", { count: "exact", head: true }),
       ]);
 
       if (cancelled) return;
-
       setAdmissionCount(pending || 0);
       setHistoryCount(history || 0);
       setStudentCount(students || 0);
@@ -84,9 +67,7 @@ export default function AdminDashboardPage() {
       if (!cancelled) setLoading(false);
     });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [router]);
 
   async function logout() {
@@ -106,39 +87,13 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const Card = ({
-    icon,
-    title,
-    text,
-    count,
-    label,
-    color,
-    href,
-  }: {
-    icon: string;
-    title: string;
-    text: string;
-    count: number;
-    label: string;
-    color: string;
-    href: string;
-  }) => (
+  const Card = ({ icon, title, text, count, label, color, href }: { icon: string; title: string; text: string; count: number; label: string; color: string; href: string }) => (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color} text-2xl`}>
-        {icon}
-      </div>
+      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color} text-2xl`}>{icon}</div>
       <h3 className="mt-5 text-lg font-bold text-gray-900">{title}</h3>
       <p className="mt-2 min-h-10 text-sm text-gray-500">{text}</p>
-      <div className="mt-4">
-        <span className="text-3xl font-black text-gray-900">{count}</span>
-        <span className="ml-2 text-xs font-semibold text-gray-400">{label}</span>
-      </div>
-      <button
-        onClick={() => router.push(href)}
-        className="mt-5 text-sm font-bold text-green-700 hover:text-green-900"
-      >
-        Open →
-      </button>
+      <div className="mt-4"><span className="text-3xl font-black text-gray-900">{count}</span><span className="ml-2 text-xs font-semibold text-gray-400">{label}</span></div>
+      <button onClick={() => router.push(href)} className="mt-5 text-sm font-bold text-green-700 hover:text-green-900">Open →</button>
     </div>
   );
 
@@ -147,32 +102,16 @@ export default function AdminDashboardPage() {
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <img
-              src="/mmbb-logo.svg"
-              alt="Madrasa Majmaul Bahrain Bijol official logo"
-              className="h-14 w-14 rounded-full bg-white object-contain p-0.5 shadow-sm ring-1 ring-green-100"
-            />
-            <div>
-              <p className="text-sm font-semibold text-green-700">Madrasa Majmaul Bahrain Bijol</p>
-              <h1 className="mt-1 text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            </div>
+            <img src="/mmbb-logo.svg" alt="Madrasa Majmaul Bahrain Bijol official logo" className="h-14 w-14 rounded-full bg-white object-contain p-0.5 shadow-sm ring-1 ring-green-100" />
+            <div><p className="text-sm font-semibold text-green-700">Madrasa Majmaul Bahrain Bijol</p><h1 className="mt-1 text-2xl font-bold text-gray-900">Admin Dashboard</h1></div>
           </div>
-          <button
-            onClick={logout}
-            className="rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700"
-          >
-            Logout
-          </button>
+          <button onClick={logout} className="rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700">Logout</button>
         </div>
       </header>
-
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-2xl bg-gradient-to-r from-green-800 to-green-600 p-6 text-white shadow-lg">
-          <p className="text-sm text-green-100">Welcome back</p>
-          <h2 className="mt-1 text-2xl font-bold">Madrasa Administration Panel</h2>
-          <p className="mt-2 text-sm text-green-100">Logged in as: {email}</p>
+          <p className="text-sm text-green-100">Welcome back</p><h2 className="mt-1 text-2xl font-bold">Madrasa Administration Panel</h2><p className="mt-2 text-sm text-green-100">Logged in as: {email}</p>
         </div>
-
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <Card icon="➕" title="Take Admission" text="Fill an admission form directly at the office on behalf of a guardian." count={0} label="New Form" color="bg-emerald-100" href="/admin/admissions/take" />
           <Card icon="🎓" title="Admissions" text="Only untouched applications waiting for a decision." count={admissionCount} label="Pending" color="bg-green-100" href="/admin/admissions" />
@@ -184,7 +123,6 @@ export default function AdminDashboardPage() {
           <Card icon="📢" title="Notices" text="Create and manage madrasa notices." count={noticeCount} label="Notices" color="bg-amber-100" href="/admin/notices" />
           <Card icon="🤲" title="Donate Page" text="Update UPI, bank account, QR code and Quran/Hadith content shown publicly." count={0} label="Manage" color="bg-lime-100" href="/admin/donate" />
         </div>
-
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="text-xl font-bold text-gray-900">Management Rules</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-4">
