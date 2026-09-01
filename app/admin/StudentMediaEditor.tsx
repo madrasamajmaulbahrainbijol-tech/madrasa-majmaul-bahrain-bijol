@@ -108,6 +108,7 @@ export default function StudentMediaEditor() {
   }, [routeId]);
 
   if (!routeId || !record) return null;
+  const currentRecord = record;
 
   const choosePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -116,7 +117,7 @@ export default function StudentMediaEditor() {
   };
 
   async function upload(file: File, kind: "photo" | "document" | "certificate") {
-    const path = `students/${record.id}/${kind}-${Date.now()}-${cleanFileName(file.name)}`;
+    const path = `students/${currentRecord.id}/${kind}-${Date.now()}-${cleanFileName(file.name)}`;
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
       upsert: true,
       contentType: file.type || undefined,
@@ -144,7 +145,7 @@ export default function StudentMediaEditor() {
         updates.certificate_url = await upload(certificateFile, "certificate");
         updates.certificate_type = certificateType.trim() || "Certificate";
       }
-      const { error: updateError } = await supabase.from("admissions").update(updates).eq("id", record.id);
+      const { error: updateError } = await supabase.from("admissions").update(updates).eq("id", currentRecord.id);
       if (updateError) throw updateError;
       setMessage("Photo / documents updated successfully.");
       setPhotoFile(null);
@@ -167,7 +168,7 @@ export default function StudentMediaEditor() {
               <div>
                 <p className="text-xs font-black uppercase tracking-[.2em] text-green-700">Student Media</p>
                 <h2 className="text-2xl font-black">Edit Photo & Documents</h2>
-                <p className="mt-1 text-sm text-slate-500">{record.student_name} • {record.student_id || "Student"}</p>
+                <p className="mt-1 text-sm text-slate-500">{currentRecord.student_name} • {currentRecord.student_id || "Student"}</p>
               </div>
               <button onClick={() => setOpen(false)} className="rounded-xl border p-3 text-slate-600 hover:bg-slate-50" aria-label="Close"><FiX /></button>
             </div>
