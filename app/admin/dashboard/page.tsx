@@ -183,6 +183,7 @@ export default function AdminDashboardPage() {
           <Card icon="👨‍🏫" title="Teachers" text="Manage madrasa teachers and profiles." count={teacherCount} label="Teachers" color="bg-emerald-100" href="/admin/teachers" />
           <Card icon="📢" title="Notices" text="Create and manage madrasa notices." count={noticeCount} label="Notices" color="bg-amber-100" href="/admin/notices" />
           <Card icon="🤲" title="Donate Page" text="Update UPI, bank account, QR code and Quran/Hadith content shown publicly." count={0} label="Manage" color="bg-lime-100" href="/admin/donate" />
+          <Card icon="👥" title="Admin Users" text="Create separate admin logins and manage access securely." count={0} label="Manage Access" color="bg-amber-100" href="/admin/admin-users" />
         </div>
 
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
