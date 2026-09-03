@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/replace-logo.cjs && node scripts/fix-expert-polish-script.cjs && node scripts/expert-student-polish.cjs && node scripts/fix-print-layout.cjs && node scripts/fix-result-print.cjs && node scripts/final-marksheet-polish.cjs && node scripts/marksheet-final-polish.cjs && node scripts/a4-marksheet-spacing.cjs && node scripts/add-result-download.cjs && node scripts/expert-results-ui.cjs && node scripts/fix-download-and-marksheet-visibility.cjs && node scripts/add-result-notice-board.cjs && node scripts/fix-student-portal-complete.cjs && node scripts/fix-id-card-a4-size.cjs && node scripts/fix-marksheet-print-layout-v2.cjs",
+    "prebuild": "node scripts/replace-logo.cjs && node scripts/fix-expert-polish-script.cjs && node scripts/expert-student-polish.cjs && node scripts/fix-print-layout.cjs && node scripts/fix-result-print.cjs && node scripts/final-marksheet-polish.cjs && node scripts/marksheet-final-polish.cjs && node scripts/a4-marksheet-spacing.cjs && node scripts/add-result-download.cjs && node scripts/expert-results-ui.cjs && node scripts/fix-download-and-marksheet-visibility.cjs && node scripts/add-result-notice-board.cjs && node scripts/fix-student-portal-complete.cjs && node scripts/fix-id-card-a4-size.cjs && node scripts/prepare-marksheet-print-patch.cjs && node scripts/fix-marksheet-print-layout-v2.cjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
