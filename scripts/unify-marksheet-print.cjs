@@ -2,7 +2,7 @@ const fs=require("fs");
 const profile="app/admin/students/[studentId]/page.tsx";
 const results="app/admin/results/page.tsx";
 const portal="app/student/dashboard/page.tsx";
-function addImport(file){let s=fs.readFileSync(file,"utf8");if(!s.includes("@/lib/marksheet-print")){const m=s.match(/^((?:import[^\n]*\n)+)/);if(!m)throw new Error("Import block not found: "+file);s=s.slice(0,m[0].length)+`import { marksheetPrintHtml, openMarksheetPrint, downloadMarksheetPdf } from "@/lib/marksheet-print";\n`+s.slice(m[0].length);fs.writeFileSync(file,s)}}
+function addImport(file){let s=fs.readFileSync(file,"utf8");if(s.includes("@/lib/marksheet-print"))return;const line='import { marksheetPrintHtml, openMarksheetPrint, downloadMarksheetPdf } from "@/lib/marksheet-print";\n';if(s.startsWith('"use client";')){const p=s.indexOf("\n");s=s.slice(0,p+1)+line+s.slice(p+1)}else{s=line+s}fs.writeFileSync(file,s)}
 function between(file,start,end,replacement){let s=fs.readFileSync(file,"utf8"),a=s.indexOf(start),b=s.indexOf(end,a);if(a<0||b<0)throw new Error("Patch boundary not found in "+file);fs.writeFileSync(file,s.slice(0,a)+replacement+s.slice(b))}
 addImport(profile);addImport(results);addImport(portal);
 let s=fs.readFileSync(profile,"utf8");const marker='const isId=title.toLowerCase().includes("id card");';if(!s.includes('if(!isId){openMarksheetPrint(body,title);return;}')){s=s.replace(marker,marker+'\n if(!isId){openMarksheetPrint(body,title);return;}');fs.writeFileSync(profile,s)}
