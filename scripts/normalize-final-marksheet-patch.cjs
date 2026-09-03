@@ -6,7 +6,7 @@ function convert(name){
  const b=s.indexOf(`";\n`,a);
  if(a<0||b<0)throw new Error(`${name} string not found`);
  let v=s.slice(a+(`const ${name}="`).length,b);
- v=v.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+ v=v.replace(/'/g,"\\'");
  s=s.slice(0,a)+`const ${name}='`+v+`'`+s.slice(b+2);
 }
 convert("fn");
