@@ -34,9 +34,16 @@ function patchAccount() {
   if (!s.includes(handlerMarker)) throw new Error('[fee-delete] fee account handler marker not found');
   s = s.replace(handlerMarker, handler + handlerMarker);
 
+  if (!s.includes('ledgerId:l.id')) {
+    const collectionPush = 'out.push({student:s,amount:Number(l.amount_paid||0),payment_date:l.payment_date,method:l.payment_method||"—",receipt:l.receipt_number||"—",month:l.fee_month,remarks:l.remarks||""})';
+    if (!s.includes(collectionPush)) throw new Error('[fee-delete] fee account collection push marker not found');
+    s = s.replace(collectionPush, 'out.push({student:s,ledgerId:l.id,amount:Number(l.amount_paid||0),payment_date:l.payment_date,method:l.payment_method||"—",receipt:l.receipt_number||"—",month:l.fee_month,remarks:l.remarks||""})');
+    s = s.replace('type Collection={student:Student;amount:number;', 'type Collection={student:Student;ledgerId:string;amount:number;');
+  }
+
   const amountCell = /(<td className="p-4 text-right">\{money\(x\.amount\)\}<\/td>)(<\/tr>)/;
   if (!amountCell.test(s)) throw new Error('[fee-delete] fee account collection row marker not found');
-  s = s.replace(amountCell, `<td className="p-4 text-right">{money(x.amount)}</td><td className="p-4 text-right"><button type="button" onClick={()=>deletePayment(x.student.id)} className="rounded-lg bg-red-600 px-3 py-2 font-black text-white hover:bg-red-700">Delete</button></td>$2`);
+  s = s.replace(amountCell, `<td className="p-4 text-right">{money(x.amount)}</td><td className="p-4 text-right"><button type="button" onClick={()=>deletePayment(x.ledgerId)} className="rounded-lg bg-red-600 px-3 py-2 font-black text-white hover:bg-red-700">Delete</button></td>$2`);
   s = s.replace('<th className="p-3 text-right">Amount</th>', '<th className="p-3 text-right">Amount</th><th className="p-3 text-right">Action</th>');
   fs.writeFileSync(accountPath, s);
   console.log('[fee-delete] fee account: patched');
