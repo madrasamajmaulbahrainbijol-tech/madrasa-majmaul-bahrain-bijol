@@ -5,48 +5,25 @@ const file = path.join(process.cwd(), "app/admin/staff-account/page.tsx");
 if (!fs.existsSync(file)) process.exit(0);
 let s = fs.readFileSync(file, "utf8");
 
-if (!s.includes("const totalPaidForStaff =")) {
-  const anchor = '  function staffLedger(staffId: string) {\n    return ledger.filter(x => x.staff_id === staffId).sort((a, b) => b.salary_month.localeCompare(a.salary_month));\n  }';
-  const helper = anchor + '\n\n  function totalPaidForStaff(staffId: string) {\n    return staffLedger(staffId).reduce((sum, row) => sum + Number(row.amount_paid || 0), 0);\n  }';
-  if (s.includes(anchor)) s = s.replace(anchor, helper);
+const anchor = '  function staffLedger(staffId: string) {\n    return ledger.filter(x => x.staff_id === staffId).sort((a, b) => b.salary_month.localeCompare(a.salary_month));\n  }';
+if (!s.includes("function totalPaidForStaff") && s.includes(anchor)) {
+  s = s.replace(anchor, anchor + '\n\n  function totalPaidForStaff(staffId: string) {\n    return staffLedger(staffId).reduce((sum, row) => sum + Number(row.amount_paid || 0), 0);\n  }');
 }
 
-// Add a dedicated Total Paid column next to Total Payable.
-if (!s.includes('data-staff-paid-column="header"')) {
-  const headerPatterns = [
-    /(<th[^>]*>\s*Total Payable\s*<\/th>)/,
-    /(<div[^>]*>\s*Total Payable\s*<\/div>)/,
-    /(<span[^>]*>\s*Total Payable\s*<\/span>)/,
-  ];
-  for (const re of headerPatterns) {
-    if (re.test(s)) {
-      s = s.replace(re, '<th data-staff-paid-column="header" className="whitespace-nowrap">Total Paid</th>$1');
-      break;
-    }
-  }
+const payableHeader = '<th className="px-5 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-700">Total Payable</th>';
+const paidHeader = '<th className="px-5 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-700">Total Paid</th>';
+if (!s.includes('>Total Paid</th>') && s.includes(payableHeader)) {
+  s = s.replace(payableHeader, paidHeader + payableHeader);
 }
 
-// Add the per-staff paid amount immediately before the existing payable amount cell.
-if (!s.includes('data-staff-paid-cell')) {
-  const cellPatterns = [
-    /(<td[^>]*>[\s\S]{0,120}\{money\([^\n]{0,180}amount_due[^\n]{0,180}\)[\s\S]{0,120}<\/td>)/,
-    /(<td[^>]*>[\s\S]{0,120}\{money\([^\n]{0,180}Math\.max\([^\n]{0,220}amount_due[^\n]{0,220}\)[\s\S]{0,120}<\/td>)/,
-  ];
-  for (const re of cellPatterns) {
-    if (re.test(s)) {
-      s = s.replace(re, '<td data-staff-paid-cell className="whitespace-nowrap font-extrabold text-green-700">{money(totalPaidForStaff(s.id))}</td>$1');
-      break;
-    }
-  }
+const payableCell = '<td className="px-5 py-4 text-sm font-black text-red-700">{s ? money(due) : "—"}</td>';
+const paidCell = '<td className="px-5 py-4 text-sm font-black text-green-700">{s ? money(totalPaidForStaff(s.id)) : "—"}</td>';
+if (!s.includes('totalPaidForStaff(s.id)') && s.includes(payableCell)) {
+  s = s.replace(payableCell, paidCell + payableCell);
 }
 
-// Fallback for compact JSX tables where the payable cell is an expression without a td body match.
-if (!s.includes('data-staff-paid-cell')) {
-  const fallback = /(\{money\(staffLedger\(s\.id\)\.reduce\([\s\S]{0,500}?\)\)\})/;
-  if (fallback.test(s)) {
-    s = s.replace(fallback, '{money(totalPaidForStaff(s.id))}</td><td data-staff-paid-cell className="whitespace-nowrap font-extrabold text-green-700">$1');
-  }
-}
+// Keep the empty-state colspan aligned with the added column.
+s = s.replace('<td colSpan={6} className="px-5 py-12 text-center font-semibold text-slate-500">No staff found.</td>', '<td colSpan={7} className="px-5 py-12 text-center font-semibold text-slate-500">No staff found.</td>');
 
 fs.writeFileSync(file, s);
 console.log("[staff-paid-column] per-staff Total Paid column patch applied");
