@@ -1,5 +1,6 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
+import Toppers from "./components/Toppers";
 import NoticeBoard from "./components/NoticeBoard";
 import About from "./components/About";
 import Courses from "./components/Courses";
@@ -14,25 +15,16 @@ export default function Home() {
   return (
     <main>
       <Navbar />
-
       <Hero />
-
+      <Toppers />
       <NoticeBoard />
-
       <About />
-
       <Courses />
-
       <WhyChooseUs />
-
       <Teachers />
-
       <Gallery />
-
       <Admission />
-
       <Contact />
-
       <Footer />
     </main>
   );
