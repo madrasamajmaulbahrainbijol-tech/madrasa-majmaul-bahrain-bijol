@@ -40,9 +40,9 @@ function patchProfile() {
   s = s.slice(0, handlerIndex) + handler + s.slice(handlerIndex);
   const close = s.lastIndexOf('</main>');
   if (close < 0) throw new Error('[fee-history] profile main closing tag not found');
-  const panel = '\n <FeePaymentHistory show={showFee} history={paymentHistory} isSuperAdmin={isSuperAdmin} onDelete={deleteFeePayment} date={date} month={month} money={money} />\n';
+  const panel = '\n <FeePaymentHistory show={true} history={paymentHistory} isSuperAdmin={isSuperAdmin} onDelete={deleteFeePayment} date={date} month={month} money={money} />\n';
   s = s.slice(0, close) + panel + s.slice(close);
   fs.writeFileSync(profilePath, s, 'utf8');
-  console.log('[fee-history] payment history restored');
+  console.log('[fee-history] payment history restored and made visible');
 }
 patchProfile();
