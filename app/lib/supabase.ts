@@ -1,313 +1,95 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabasePublishableKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
+if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
+if (!supabasePublishableKey) throw new Error("Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+
+export const supabase = createClient(supabaseUrl, supabasePublishableKey);
+
+export async function uploadTopperImage(file: File): Promise<string> {
+  if (!file) throw new Error("Student photo select nahi ki gayi.");
+  if (!file.type.startsWith("image/")) throw new Error("Please valid image file select karein.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Student photo maximum 5MB ki honi chahiye.");
+
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const filePath = `toppers/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+  const { error } = await supabase.storage.from("topper-images").upload(filePath, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type,
+  });
+  if (error) throw new Error(error.message || "Student photo upload nahi ho saki.");
+
+  const { data } = supabase.storage.from("topper-images").getPublicUrl(filePath);
+  if (!data?.publicUrl) throw new Error("Student photo ka public URL nahi mila.");
+  return data.publicUrl;
 }
 
-if (!supabasePublishableKey) {
-  throw new Error(
-    "Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-  );
+export async function deleteTopperImage(imageUrl: string): Promise<void> {
+  if (!imageUrl) return;
+  const marker = "/storage/v1/object/public/topper-images/";
+  const index = imageUrl.indexOf(marker);
+  if (index === -1) return;
+  const filePath = decodeURIComponent(imageUrl.substring(index + marker.length));
+  if (!filePath) return;
+  const { error } = await supabase.storage.from("topper-images").remove([filePath]);
+  if (error) throw new Error(error.message || "Student photo delete nahi ho saki.");
 }
-
-export const supabase = createClient(
-  supabaseUrl,
-  supabasePublishableKey
-);
 
 /* =========================================================
    NOTICE IMAGE UPLOAD
 ========================================================= */
-
-export async function uploadNoticeImage(
-  file: File
-): Promise<string> {
-  if (!file) {
-    throw new Error("Image file select nahi ki gayi.");
-  }
-
-  const allowedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-  ];
-
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error(
-      "Sirf JPG, PNG, WEBP ya GIF images upload kar sakte hain."
-    );
-  }
-
-  const maxSize = 5 * 1024 * 1024;
-
-  if (file.size > maxSize) {
-    throw new Error(
-      "Image maximum 5MB ki honi chahiye."
-    );
-  }
-
-  const extension =
-    file.name.split(".").pop()?.toLowerCase() || "jpg";
-
-  const fileName = `${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 10)}.${extension}`;
-
-  const filePath = `notices/${fileName}`;
-
-  const { data: uploadData, error: uploadError } =
-    await supabase.storage
-      .from("notice-images")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: file.type,
-      });
-
-  if (uploadError) {
-    console.error(
-      "Notice image upload error:",
-      uploadError
-    );
-
-    throw new Error(
-      uploadError.message ||
-        "Notice image upload nahi ho saki."
-    );
-  }
-
-  console.log(
-    "Notice image uploaded successfully:",
-    uploadData
-  );
-
-  const {
-    data: publicUrlData,
-  } = supabase.storage
-    .from("notice-images")
-    .getPublicUrl(filePath);
-
-  const publicUrl =
-    publicUrlData?.publicUrl || "";
-
-  if (!publicUrl) {
-    throw new Error(
-      "Uploaded image ka public URL nahi mila."
-    );
-  }
-
+export async function uploadNoticeImage(file: File): Promise<string> {
+  if (!file) throw new Error("Image file select nahi ki gayi.");
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+  if (!allowedTypes.includes(file.type)) throw new Error("Sirf JPG, PNG, WEBP ya GIF images upload kar sakte hain.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Image maximum 5MB ki honi chahiye.");
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const filePath = `notices/${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${extension}`;
+  const { data: uploadData, error: uploadError } = await supabase.storage.from("notice-images").upload(filePath, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+  if (uploadError) throw new Error(uploadError.message || "Notice image upload nahi ho saki.");
+  const { data: publicUrlData } = supabase.storage.from("notice-images").getPublicUrl(filePath);
+  const publicUrl = publicUrlData?.publicUrl || "";
+  if (!publicUrl) throw new Error("Uploaded image ka public URL nahi mila.");
   return publicUrl;
 }
 
-/* =========================================================
-   NOTICE IMAGE DELETE
-========================================================= */
-
-export async function deleteNoticeImage(
-  imageUrl: string
-): Promise<void> {
-  if (!imageUrl) {
-    return;
-  }
-
-  try {
-    const marker =
-      "/storage/v1/object/public/notice-images/";
-
-    const markerIndex =
-      imageUrl.indexOf(marker);
-
-    if (markerIndex === -1) {
-      console.warn(
-        "Notice image URL notice-images bucket se match nahi hui."
-      );
-
-      return;
-    }
-
-    const filePath = decodeURIComponent(
-      imageUrl.substring(
-        markerIndex + marker.length
-      )
-    );
-
-    if (!filePath) {
-      return;
-    }
-
-    const { error } =
-      await supabase.storage
-        .from("notice-images")
-        .remove([filePath]);
-
-    if (error) {
-      console.error(
-        "Notice image delete error:",
-        error
-      );
-
-      throw new Error(
-        error.message ||
-          "Notice image delete nahi ho saki."
-      );
-    }
-  } catch (error) {
-    console.error(
-      "deleteNoticeImage error:",
-      error
-    );
-
-    throw error;
-  }
+export async function deleteNoticeImage(imageUrl: string): Promise<void> {
+  if (!imageUrl) return;
+  const marker = "/storage/v1/object/public/notice-images/";
+  const markerIndex = imageUrl.indexOf(marker);
+  if (markerIndex === -1) return;
+  const filePath = decodeURIComponent(imageUrl.substring(markerIndex + marker.length));
+  if (!filePath) return;
+  const { error } = await supabase.storage.from("notice-images").remove([filePath]);
+  if (error) throw new Error(error.message || "Notice image delete nahi ho saki.");
 }
 
 /* =========================================================
    TEACHER IMAGE UPLOAD
 ========================================================= */
-
-export async function uploadTeacherImage(
-  file: File,
-  teacherId: string
-): Promise<string> {
-  if (!file) {
-    throw new Error(
-      "Teacher photo select nahi ki gayi."
-    );
-  }
-
-  if (!file.type.startsWith("image/")) {
-    throw new Error(
-      "Please valid image file select karein."
-    );
-  }
-
-  const maxSize = 5 * 1024 * 1024;
-
-  if (file.size > maxSize) {
-    throw new Error(
-      "Teacher image maximum 5MB ki honi chahiye."
-    );
-  }
-
-  const extension =
-    file.name.split(".").pop()?.toLowerCase() || "jpg";
-
-  const filePath =
-    `${teacherId}-${Date.now()}.${extension}`;
-
-  console.log(
-    "Teacher image upload:",
-    filePath
-  );
-
-  const { data: uploadData, error: uploadError } =
-    await supabase.storage
-      .from("teacher-images")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: file.type,
-      });
-
-  if (uploadError) {
-    console.error(
-      "Teacher image upload error:",
-      uploadError
-    );
-
-    throw new Error(
-      uploadError.message ||
-        "Teacher image upload nahi ho saki."
-    );
-  }
-
-  console.log(
-    "Teacher image uploaded:",
-    uploadData
-  );
-
-  const {
-    data: publicUrlData,
-  } = supabase.storage
-    .from("teacher-images")
-    .getPublicUrl(filePath);
-
-  const publicUrl =
-    publicUrlData?.publicUrl || "";
-
-  if (!publicUrl) {
-    throw new Error(
-      "Teacher image ka public URL nahi mila."
-    );
-  }
-
-  return publicUrl;
+export async function uploadTeacherImage(file: File, teacherId: string): Promise<string> {
+  if (!file) throw new Error("Teacher photo select nahi ki gayi.");
+  if (!file.type.startsWith("image/")) throw new Error("Please valid image file select karein.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Teacher image maximum 5MB ki honi chahiye.");
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const filePath = `${teacherId}-${Date.now()}.${extension}`;
+  const { error } = await supabase.storage.from("teacher-images").upload(filePath, file, { cacheControl: "3600", upsert: true, contentType: file.type });
+  if (error) throw new Error(error.message || "Teacher image upload nahi ho saki.");
+  const { data } = supabase.storage.from("teacher-images").getPublicUrl(filePath);
+  if (!data?.publicUrl) throw new Error("Teacher image ka public URL nahi mila.");
+  return data.publicUrl;
 }
 
-/* =========================================================
-   TEACHER IMAGE DELETE
-========================================================= */
-
-export async function deleteTeacherImage(
-  imageUrl: string
-): Promise<void> {
-  if (!imageUrl) {
-    return;
-  }
-
-  try {
-    const marker =
-      "/storage/v1/object/public/teacher-images/";
-
-    const markerIndex =
-      imageUrl.indexOf(marker);
-
-    if (markerIndex === -1) {
-      console.warn(
-        "Teacher image URL teacher-images bucket se match nahi hui."
-      );
-
-      return;
-    }
-
-    const filePath = decodeURIComponent(
-      imageUrl.substring(
-        markerIndex + marker.length
-      )
-    );
-
-    if (!filePath) {
-      return;
-    }
-
-    const { error } =
-      await supabase.storage
-        .from("teacher-images")
-        .remove([filePath]);
-
-    if (error) {
-      console.error(
-        "Teacher image delete error:",
-        error
-      );
-
-      throw new Error(
-        error.message ||
-          "Teacher image delete nahi ho saki."
-      );
-    }
-  } catch (error) {
-    console.error(
-      "deleteTeacherImage error:",
-      error
-    );
-
-    throw error;
-  }
+export async function deleteTeacherImage(imageUrl: string): Promise<void> {
+  if (!imageUrl) return;
+  const marker = "/storage/v1/object/public/teacher-images/";
+  const index = imageUrl.indexOf(marker);
+  if (index === -1) return;
+  const filePath = decodeURIComponent(imageUrl.substring(index + marker.length));
+  if (!filePath) return;
+  const { error } = await supabase.storage.from("teacher-images").remove([filePath]);
+  if (error) throw new Error(error.message || "Teacher image delete nahi ho saki.");
 }
