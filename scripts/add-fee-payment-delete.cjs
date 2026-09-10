@@ -13,9 +13,10 @@ function patchProfile() {
   }
 
   const typeMarker = 'type FeeLedger=';
-  const typeEnd = s.indexOf('\n', s.indexOf(typeMarker));
-  if (typeEnd < 0) throw new Error('[fee-history] FeeLedger type marker not found');
-  const feeTypeLine = s.slice(s.indexOf(typeMarker), typeEnd);
+  const typeStart = s.indexOf(typeMarker);
+  const typeEnd = s.indexOf('\n', typeStart);
+  if (typeStart < 0 || typeEnd < 0) throw new Error('[fee-history] FeeLedger type marker not found');
+  const feeTypeLine = s.slice(typeStart, typeEnd);
   const newFeeType = feeTypeLine.replace(/};$/, ';paid_by_admin_id:string|null;paid_by_admin_name:string|null;paid_by_admin_email:string|null};');
   s = s.replace(feeTypeLine, newFeeType);
 
