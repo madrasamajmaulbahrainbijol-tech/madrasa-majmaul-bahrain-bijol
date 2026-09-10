@@ -15,6 +15,7 @@ export default function AdminDashboardPage() {
   const [teacherCount, setTeacherCount] = useState(0);
   const [noticeCount, setNoticeCount] = useState(0);
   const [staffAccountCount, setStaffAccountCount] = useState(0);
+  const [courseCount, setCourseCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +41,7 @@ export default function AdminDashboardPage() {
         { count: teachers },
         { count: notices },
         { count: staffAccounts },
+        { count: courses },
       ] = await Promise.all([
         supabase.from("admissions").select("id", { count: "exact", head: true }).eq("status", "new"),
         supabase.from("admissions").select("id", { count: "exact", head: true }).or("status.neq.approved,account_status.neq.approved"),
@@ -48,6 +50,7 @@ export default function AdminDashboardPage() {
         supabase.from("teachers").select("id", { count: "exact", head: true }),
         supabase.from("notices").select("id", { count: "exact", head: true }),
         supabase.from("staff_profiles").select("id", { count: "exact", head: true }).eq("active", true),
+        supabase.from("courses").select("id", { count: "exact", head: true }),
       ]);
 
       if (cancelled) return;
@@ -58,6 +61,7 @@ export default function AdminDashboardPage() {
       setTeacherCount(teachers || 0);
       setNoticeCount(notices || 0);
       setStaffAccountCount(staffAccounts || 0);
+      setCourseCount(courses || 0);
       setLoading(false);
     }
 
@@ -105,6 +109,7 @@ export default function AdminDashboardPage() {
           <Card icon="📊" title="Results" text="Select any approved student and create their Annual or Common Test result directly." count={studentCount} label="Approved Students" color="bg-emerald-100" href="/admin/results" />
           <Card icon="📩" title="Enquiries" text="New website enquiries waiting for attention." count={enquiryCount} label="New" color="bg-blue-100" href="/admin/enquiries" />
           <Card icon="👨‍🏫" title="Teachers" text="Manage madrasa teachers and profiles." count={teacherCount} label="Teachers" color="bg-emerald-100" href="/admin/teachers" />
+          <Card icon="📚" title="Courses" text="Add, edit, hide/show and delete courses. Website courses update automatically." count={courseCount} label="Courses" color="bg-green-100" href="/admin/courses" />
           <Card icon="💼" title="Staff Account" text="Manage staff joining dates, salary history, monthly payable amounts and salary payments." count={staffAccountCount} label="Active Staff" color="bg-indigo-100" href="/admin/staff-account" />
           <Card icon="📢" title="Notices" text="Create and manage madrasa notices." count={noticeCount} label="Notices" color="bg-amber-100" href="/admin/notices" />
           <Card icon="🤲" title="Donate Page" text="Update UPI, bank account, QR code and Quran/Hadith content shown publicly." count={0} label="Manage" color="bg-lime-100" href="/admin/donate" />
