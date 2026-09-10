@@ -42,11 +42,12 @@ function patchProfile() {
   if (handlerIndex < 0) throw new Error('[fee-history] currentFee marker not found');
   const handler = ' const deleteFeePayment=async(ledgerId:string)=>{if(!isSuperAdmin)return;if(!window.confirm("Delete this payment history record?"))return;setNotice("");setError("");const {error:e}=await supabase.rpc("delete_student_fee_payment",{p_ledger_id:ledgerId});if(e){setError(e.message||"Unable to delete fee payment record.");return}setNotice("Fee payment history deleted by Super Admin.");await load()};\n';
   if (!s.includes('const deleteFeePayment=')) s = s.slice(0, handlerIndex) + handler + s.slice(handlerIndex);
-  const close = s.lastIndexOf('</main>');
-  if (close < 0) throw new Error('[fee-history] profile main closing tag not found');
-  const panel = '\n <FeePaymentHistory show={true} history={paymentHistory} isSuperAdmin={isSuperAdmin} onDelete={deleteFeePayment} date={date} month={month} money={money} />\n';
-  s = s.slice(0, close) + panel + s.slice(close);
+  const feesMarker = '<section id="fees"';
+  const feesIndex = s.indexOf(feesMarker);
+  if (feesIndex < 0) throw new Error('[fee-history] fees section marker not found');
+  const panel = '<FeePaymentHistory show={true} history={paymentHistory} isSuperAdmin={isSuperAdmin} onDelete={deleteFeePayment} date={date} month={month} money={money} />\n ';
+  s = s.slice(0, feesIndex) + panel + s.slice(feesIndex);
   fs.writeFileSync(profilePath, s, 'utf8');
-  console.log('[fee-history] payment history restored and made visible');
+  console.log('[fee-history] payment history placed directly above Monthly Fee Ledger');
 }
 patchProfile();
