@@ -24,14 +24,14 @@ patch(feePage, [
   ['select("id,admission_id,fee_month,amount_due,amount_paid,payment_date,payment_method,receipt_number,remarks")','select("id,admission_id,fee_month,amount_due,amount_paid,payment_date,payment_method,receipt_number,remarks,paid_by_admin_id,paid_by_admin_name,paid_by_admin_email")'],
   ['out.push({student:s,amount:Number(l.amount_paid||0),payment_date:l.payment_date,method:l.payment_method||"—",receipt:l.receipt_number||"—",month:l.fee_month,remarks:l.remarks||""})','out.push({student:s,amount:Number(l.amount_paid||0),payment_date:l.payment_date,method:l.payment_method||"—",receipt:l.receipt_number||"—",month:l.fee_month,remarks:l.remarks||"",paidBy:l.paid_by_admin_name||l.paid_by_admin_email||"—"})'],
   ['<th className="p-3 text-left">Receipt</th><th className="p-3 text-right">Amount</th>','<th className="p-3 text-left">Receipt</th><th className="p-3 text-left">Entered By</th><th className="p-3 text-right">Amount</th>'],
-  ['<td className="p-4">{x.receipt}</td><td className="p-4 text-right font-black text-green-700">{money(x.amount)}</td>','<td className="p-4">{x.receipt}</td><td className="p-4"><div className="font-black text-slate-800">{x.paidBy}</div><div className="text-xs text-slate-400">Admin who entered this fee</div></td><td className="p-4 text-right font-black text-green-700">{money(x.amount)}</td>']
+  ['<td className="p-4">{x.receipt}</td><td className="p-4 text-right font-black text-green-700">{money(x.amount)}</td>','<td className="p-4">{x.receipt}</td><td className="p-4"><div className="font-black text-slate-800">{x.paidBy||"—"}</div><div className="text-xs text-slate-400">Admin who entered this fee</div></td><td className="p-4 text-right font-black text-green-700">{money(x.amount)}</td>']
 ], 'Fee & Account audit UI');
 
 if (fs.existsSync(feePage)) {
   let src = fs.readFileSync(feePage, 'utf8');
   const m = src.match(/type Collection=\{([^}]*)\};/);
   if (m && !m[1].includes('paidBy')) {
-    src = src.replace(m[0], `type Collection={${m[1]};paidBy:string};`);
+    src = src.replace(m[0], `type Collection={${m[1]};paidBy?:string};`);
     fs.writeFileSync(feePage, src);
     console.log('[fee-audit] Collection paidBy type: patched');
   }
