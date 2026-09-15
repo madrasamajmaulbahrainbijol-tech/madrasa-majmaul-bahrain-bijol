@@ -31,18 +31,35 @@ jobs:
         with:
           version: latest
 
-      - name: Prepare database connection
+      - name: Prepare passwordless database URL
         run: |
           python3 - <<'PY'
           import os
-          import re
 
           raw = os.environ["SUPABASE_DB_URL"].strip()
-          match = re.match(r"^(postgres(?:ql)?://[^:]+):.*@(.+)$", raw)
-          if not match:
-              raise SystemExit("SUPABASE_DB_URL must be a PostgreSQL connection string with a username and host")
+          if "://" not in raw:
+              raise SystemExit("SUPABASE_DB_URL must be a PostgreSQL connection string")
 
-          passwordless = match.group(1) + "@" + match.group(2)
+          scheme, rest = raw.split("://", 1)
+          if scheme not in ("postgres", "postgresql"):
+              raise SystemExit("SUPABASE_DB_URL must use postgres:// or postgresql://")
+
+          authority, slash, path = rest.partition("/")
+          userinfo, at, hostport = authority.rpartition("@")
+
+          if at:
+              username = userinfo.split(":", 1)[0]
+          else:
+              username = authority
+              hostport = authority
+
+          if not username or not hostport:
+              raise SystemExit("SUPABASE_DB_URL must contain a database username and host")
+
+          passwordless = f"{scheme}://{username}@{hostport}"
+          if slash:
+              passwordless += "/" + path
+
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
               f.write("SUPABASE_DB_URL_PASSWORDLESS=" + passwordless + "\n")
           PY
