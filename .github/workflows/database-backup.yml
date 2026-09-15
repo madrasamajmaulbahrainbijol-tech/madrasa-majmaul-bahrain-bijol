@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
 
     steps:
@@ -22,6 +23,7 @@ jobs:
       - name: Validate backup secrets
         run: |
           test -n "$SUPABASE_DB_URL" || (echo "Missing SUPABASE_DB_URL GitHub secret" && exit 1)
+          test -n "$SUPABASE_DB_PASSWORD" || (echo "Missing SUPABASE_DB_PASSWORD GitHub secret" && exit 1)
           test -n "$BACKUP_ENCRYPTION_KEY" || (echo "Missing BACKUP_ENCRYPTION_KEY GitHub secret" && exit 1)
 
       - name: Install Supabase CLI
@@ -33,26 +35,16 @@ jobs:
         run: |
           python3 - <<'PY'
           import os
-          from urllib.parse import urlsplit, urlunsplit, unquote, quote
+          import re
 
           raw = os.environ["SUPABASE_DB_URL"].strip()
-          parsed = urlsplit(raw)
-          if parsed.scheme not in ("postgres", "postgresql"):
-              raise SystemExit("SUPABASE_DB_URL must be a PostgreSQL connection string")
-          if not parsed.hostname or not parsed.username:
-              raise SystemExit("SUPABASE_DB_URL is missing the database host or username")
+          match = re.match(r"^(postgres(?:ql)?://[^:]+):.*@(.+)$", raw)
+          if not match:
+              raise SystemExit("SUPABASE_DB_URL must be a PostgreSQL connection string with a username and host")
 
-          username = quote(unquote(parsed.username), safe="")
-          password = unquote(parsed.password or "")
-          host = parsed.hostname
-          if ":" in host and not host.startswith("["):
-              host = f"[{host}]"
-          hostport = host + (f":{parsed.port}" if parsed.port else "")
-          passwordless = urlunsplit((parsed.scheme, username + "@" + hostport, parsed.path or "/postgres", parsed.query, parsed.fragment))
-
+          passwordless = match.group(1) + "@" + match.group(2)
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
               f.write("SUPABASE_DB_URL_PASSWORDLESS=" + passwordless + "\n")
-              f.write("SUPABASE_DB_PASSWORD=" + password + "\n")
           PY
 
       - name: Create database dump
