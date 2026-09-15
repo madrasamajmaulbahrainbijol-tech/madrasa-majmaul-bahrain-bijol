@@ -31,45 +31,40 @@ jobs:
         with:
           version: latest
 
-      - name: Prepare passwordless database URL
+      - name: Prepare authenticated database URL
         run: |
           python3 - <<'PY'
           import os
+          from urllib.parse import quote, unquote, urlsplit
 
           raw = os.environ["SUPABASE_DB_URL"].strip()
-          if "://" not in raw:
-              raise SystemExit("SUPABASE_DB_URL must be a PostgreSQL connection string")
-
-          scheme, rest = raw.split("://", 1)
-          if scheme not in ("postgres", "postgresql"):
+          parts = urlsplit(raw)
+          if parts.scheme not in ("postgres", "postgresql"):
               raise SystemExit("SUPABASE_DB_URL must use postgres:// or postgresql://")
-
-          authority, slash, path = rest.partition("/")
-          userinfo, at, hostport = authority.rpartition("@")
-
-          if at:
-              username = userinfo.split(":", 1)[0]
-          else:
-              username = authority
-              hostport = authority
-
-          if not username or not hostport:
+          if not parts.hostname or not parts.username:
               raise SystemExit("SUPABASE_DB_URL must contain a database username and host")
 
-          passwordless = f"{scheme}://{username}@{hostport}"
-          if slash:
-              passwordless += "/" + path
+          username = quote(unquote(parts.username), safe="")
+          host = parts.hostname
+          if parts.port:
+              host += f":{parts.port}"
+          password = quote(os.environ["SUPABASE_DB_PASSWORD"], safe="")
+          path = parts.path or "/postgres"
+
+          authenticated = f"{parts.scheme}://{username}:{password}@{host}{path}"
+          if parts.query:
+              authenticated += "?" + parts.query
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
-              f.write("SUPABASE_DB_URL_PASSWORDLESS=" + passwordless + "\n")
+              f.write("SUPABASE_DB_URL_AUTHENTICATED=" + authenticated + "\n")
           PY
 
       - name: Create database dump
         run: |
           mkdir -p backup
-          supabase db dump --db-url "$SUPABASE_DB_URL_PASSWORDLESS" --password "$SUPABASE_DB_PASSWORD" -f backup/roles.sql --role-only
-          supabase db dump --db-url "$SUPABASE_DB_URL_PASSWORDLESS" --password "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
-          supabase db dump --db-url "$SUPABASE_DB_URL_PASSWORDLESS" --password "$SUPABASE_DB_PASSWORD" -f backup/data.sql --data-only --use-copy -x "storage.buckets_vectors" -x "storage.vector_indexes"
+          supabase db dump --db-url "$SUPABASE_DB_URL_AUTHENTICATED" -f backup/roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL_AUTHENTICATED" -f backup/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL_AUTHENTICATED" -f backup/data.sql --data-only --use-copy -x "storage.buckets_vectors" -x "storage.vector_indexes"
 
       - name: Create encrypted backup archive
         run: |
