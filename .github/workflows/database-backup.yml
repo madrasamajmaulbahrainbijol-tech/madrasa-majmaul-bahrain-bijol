@@ -29,7 +29,7 @@ jobs:
         with:
           version: latest
 
-      - name: Normalize database connection string
+      - name: Prepare database connection
         run: |
           python3 - <<'PY'
           import os
@@ -43,24 +43,24 @@ jobs:
               raise SystemExit("SUPABASE_DB_URL is missing the database host or username")
 
           username = quote(unquote(parsed.username), safe="")
-          password = quote(unquote(parsed.password or ""), safe="")
+          password = unquote(parsed.password or "")
           host = parsed.hostname
           if ":" in host and not host.startswith("["):
               host = f"[{host}]"
           hostport = host + (f":{parsed.port}" if parsed.port else "")
-          auth = username + (f":{password}" if parsed.password is not None else "")
-          normalized = urlunsplit((parsed.scheme, auth + "@" + hostport, parsed.path or "/postgres", parsed.query, parsed.fragment))
+          passwordless = urlunsplit((parsed.scheme, username + "@" + hostport, parsed.path or "/postgres", parsed.query, parsed.fragment))
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
-              f.write("SUPABASE_DB_URL_NORMALIZED=" + normalized + "\n")
+              f.write("SUPABASE_DB_URL_PASSWORDLESS=" + passwordless + "\n")
+              f.write("SUPABASE_DB_PASSWORD=" + password + "\n")
           PY
 
       - name: Create database dump
         run: |
           mkdir -p backup
-          supabase db dump --db-url "$SUPABASE_DB_URL_NORMALIZED" -f backup/roles.sql --role-only
-          supabase db dump --db-url "$SUPABASE_DB_URL_NORMALIZED" -f backup/schema.sql
-          supabase db dump --db-url "$SUPABASE_DB_URL_NORMALIZED" -f backup/data.sql --data-only --use-copy -x "storage.buckets_vectors" -x "storage.vector_indexes"
+          supabase db dump --db-url "$SUPABASE_DB_URL_PASSWORDLESS" --password "$SUPABASE_DB_PASSWORD" -f backup/roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL_PASSWORDLESS" --password "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL_PASSWORDLESS" --password "$SUPABASE_DB_PASSWORD" -f backup/data.sql --data-only --use-copy -x "storage.buckets_vectors" -x "storage.vector_indexes"
 
       - name: Create encrypted backup archive
         run: |
