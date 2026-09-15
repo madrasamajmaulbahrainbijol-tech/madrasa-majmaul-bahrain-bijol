@@ -29,7 +29,11 @@ export default function SystemControlPage() {
   async function update(action: "pause" | "resume", until: string | null) {
     setLoading(true); setMessage("");
     try {
-      const res = await fetch("/api/system-control", { method: "POST", headers: { "Content-Type": "application/json", "x-system-code": code }, body: JSON.stringify({ action, resume_until: until }) });
+      const res = await fetch("/api/system-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-system-code": code },
+        body: JSON.stringify({ action, resume_until: until, code }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to update system status");
       setState(data); setResumeUntil(data.resume_until || "");
