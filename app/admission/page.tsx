@@ -24,6 +24,7 @@ type FormData = {
   pincode: string;
   country: string;
   course: string;
+  whatsapp_opt_in: boolean;
 };
 
 const initialFormData: FormData = {
@@ -45,6 +46,7 @@ const initialFormData: FormData = {
   pincode: "",
   country: "India",
   course: "",
+  whatsapp_opt_in: false,
 };
 
 const inputClass =
@@ -143,6 +145,7 @@ export default function AdmissionPage() {
       if (!/^\d{6}$/.test(clean.pincode))
         throw new Error("Please enter a valid 6-digit PIN code.");
       if (!clean.course) throw new Error("Please select a course.");
+      if (!formData.whatsapp_opt_in) throw new Error("Please confirm WhatsApp notification consent.");
       if (!identityProofType)
         throw new Error("Please select the identity proof type.");
       if (!declarationAccepted)
@@ -203,6 +206,8 @@ export default function AdmissionPage() {
           message,
           date_of_birth: clean.date_of_birth,
           status: "new",
+          whatsapp_opt_in: formData.whatsapp_opt_in,
+          whatsapp_opt_in_at: formData.whatsapp_opt_in ? new Date().toISOString() : null,
         });
 
       if (insertError) {
@@ -363,6 +368,13 @@ export default function AdmissionPage() {
                   {identityProof && <p className="mt-2 text-xs font-semibold text-green-700">✓ {identityProof.name}</p>}
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-3xl border border-green-200 bg-green-50 p-6 shadow-xl sm:p-8">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input type="checkbox" checked={formData.whatsapp_opt_in} onChange={(e) => setFormData((current) => ({ ...current, whatsapp_opt_in: e.target.checked }))} className="mt-1 h-5 w-5" />
+                <span className="text-sm leading-7 text-gray-700"><strong>WhatsApp Notifications:</strong> I agree to receive madrasa-related fee reminders, notices, exam updates and other important communication from Madrasa Majmaul Bahrain Bijol on WhatsApp.</span>
+              </label>
             </div>
 
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl sm:p-8">
