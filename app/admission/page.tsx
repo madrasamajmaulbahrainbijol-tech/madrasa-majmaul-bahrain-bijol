@@ -124,9 +124,27 @@ export default function AdmissionPage() {
     setApplicationNumber("");
 
     try {
-      const clean = Object.fromEntries(
-        Object.entries(formData).map(([key, value]) => [key, value.trim()])
-      ) as FormData;
+      const clean: FormData = {
+        ...formData,
+        full_name: formData.full_name.trim(),
+        date_of_birth: formData.date_of_birth.trim(),
+        previous_education: formData.previous_education.trim(),
+        father_name: formData.father_name.trim(),
+        mother_name: formData.mother_name.trim(),
+        guardian_name: formData.guardian_name.trim(),
+        guardian_relation: formData.guardian_relation.trim(),
+        phone: formData.phone.trim(),
+        alternate_phone: formData.alternate_phone.trim(),
+        occupation: formData.occupation.trim(),
+        address: formData.address.trim(),
+        village: formData.village.trim(),
+        post_office: formData.post_office.trim(),
+        district: formData.district.trim(),
+        state: formData.state.trim(),
+        pincode: formData.pincode.trim(),
+        country: formData.country.trim(),
+        course: formData.course.trim(),
+      };
 
       if (!clean.full_name) throw new Error("Student name is required.");
       if (!clean.date_of_birth) throw new Error("Date of birth is required.");
