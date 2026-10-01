@@ -105,7 +105,7 @@ Madrasa Majmaul Bahrain Bijol`;
   }, [type, guardian, studentName, due, amount, feeMonth, receipt, startDate, endDate, resumeDate, reason, examName, examDate, examTime, customMessage]);
 
   function send() {
-    const digits = String(student.mobile || "").replace(/\\D/g, "");
+    const digits = String(student.mobile || "").replace(/\D/g, "");
     if (!digits) return;
     const phone = digits.length === 10 ? "91" + digits : digits.startsWith("91") ? digits : "91" + digits;
     const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
