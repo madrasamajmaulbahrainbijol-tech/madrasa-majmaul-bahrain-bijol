@@ -10,38 +10,119 @@ type Ledger = { admission_id:string; amount_due:number|string|null; amount_paid:
 export default function WhatsAppPage(){
  const [students,setStudents]=useState<Student[]>([]),[ledgers,setLedgers]=useState<Ledger[]>([]),[loading,setLoading]=useState(true),[refreshing,setRefreshing]=useState(false),[error,setError]=useState(""),[busy,setBusy]=useState(""),[tab,setTab]=useState<"due"|"all">("due");
  async function load(){setError("");try{const [{data:s,error:se},{data:l,error:le}]=await Promise.all([supabase.from("admissions").select("id,student_id,student_name,guardian_name,mobile,course,whatsapp_opt_in").eq("status","approved").eq("account_status","approved").order("student_name"),supabase.from("student_fee_ledger").select("admission_id,amount_due,amount_paid,fee_status")]);if(se)throw se;if(le)throw le;setStudents((s||[]) as Student[]);setLedgers((l||[]) as Ledger[])}catch(e:any){setError(e?.message||"Unable to load WhatsApp data.")}finally{setLoading(false);setRefreshing(false)}}
- useEffect(()=>{load()},[]);
+ useEffect(()=>{load()},[]); const [composerOpen,setComposerOpen]=useState(false);
+ const [composerStudent,setComposerStudent]=useState<Student|null>(null);
+ const [messageType,setMessageType]=useState<"fee"|"payment"|"holiday"|"exam"|"general">("fee");
+ const [customMessage,setCustomMessage]=useState("");
+ const [amount,setAmount]=useState("");
+ const [feeMonth,setFeeMonth]=useState("");
+ const [receipt,setReceipt]=useState("");
+ const [noticeDate,setNoticeDate]=useState("");
+ const [noticeEndDate,setNoticeEndDate]=useState("");
+ const [resumeDate,setResumeDate]=useState("");
+ const [noticeReason,setNoticeReason]=useState("");
+ const [examName,setExamName]=useState("");
+ const [examDate,setExamDate]=useState("");
+ const [examTime,setExamTime]=useState("");
+
  const dueMap=useMemo(()=>{const m=new Map<string,number>();for(const r of ledgers){if(r.fee_status==="holiday")continue;const d=Math.max(0,Number(r.amount_due||0)-Number(r.amount_paid||0));m.set(r.admission_id,(m.get(r.admission_id)||0)+d)}return m},[ledgers]);
- const dueStudents=useMemo(()=>students.filter(s=>(dueMap.get(s.id)||0)>0),[students,dueMap]);
- const visible=tab==="due"?dueStudents:students;
- const optedIn=students.filter(s=>s.whatsapp_opt_in).length,numbers=students.filter(s=>!!s.mobile).length,dueOptedIn=dueStudents.filter(s=>s.whatsapp_opt_in&&!!s.mobile).length;
- async function toggleOptIn(s:Student){setBusy(s.id);try{const next=!s.whatsapp_opt_in;const {error:e}=await supabase.from("admissions").update({whatsapp_opt_in:next,whatsapp_opt_in_at:next?new Date().toISOString():null,whatsapp_opted_out_at:next?null:new Date().toISOString()}).eq("id",s.id);if(e)throw e;setStudents(c=>c.map(x=>x.id===s.id?{...x,whatsapp_opt_in:next}:x))}catch(e:any){setError(e?.message||"Could not update consent.")}finally{setBusy("")}}
- function manual(s:Student){
-  const digits=String(s.mobile||"").replace(/\\D/g,"");
-  if(!digits)return;
-  const due=Math.round(dueMap.get(s.id)||0);
+ const dueStudents=useMemo(()=>students.f function manual(s:Student){
+  setComposerStudent(s);
+  setMessageType("fee");
+  setComposerOpen(true);
+  setCustomMessage("");
+  setAmount(String(Math.round(dueMap.get(s.id)||0)));
+  setFeeMonth("");
+  setReceipt("");
+  setNoticeDate("");
+  setNoticeEndDate("");
+  setResumeDate("");
+  setNoticeReason("");
+  setExamName("");
+  setExamDate("");
+  setExamTime("");
+ }
+
+ function buildWhatsAppMessage(s:Student){
   const guardian=s.guardian_name||"Parent/Guardian";
   const student=s.student_name||"Student";
-  const msg=[
-   "Assalamu Alaikum "+guardian+",",
-   "",
-   "This is a polite fee reminder from Madrasa Majmaul Bahrain Bijol regarding "+student+".",
-   "",
-   "Outstanding Fee Balance: ₹"+due.toLocaleString("en-IN"),
-   "",
-   "Barah-e-karam fee ki adaigi jald se jald kar dein. Agar fee already jama kar di gayi hai, to please is message ko ignore karein.",
-   "",
-   "JazakAllahu Khairan for your cooperation and support.",
-   "",
-   "Regards,",
-   "Madrasa Majmaul Bahrain Bijol"
-  ].join("\\n");
-  window.open("https://wa.me/91"+digits+"?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer")
+  const due=Math.round(dueMap.get(s.id)||0);
+  if(messageType==="fee"){
+   return `*Assalamu Alaikum ${guardian},*
+
+This is a polite fee reminder from *Madrasa Majmaul Bahrain Bijol* regarding *${student}*.
+
+*Outstanding Fee Balance: ₹${due.toLocaleString("en-IN")}*
+
+Barah-e-karam fee ki adaigi jald se jald kar dein. Agar fee already jama kar di gayi hai, to please is message ko ignore karein.
+
+JazakAllahu Khairan for your cooperation and support.
+
+*Regards,*
+Madrasa Majmaul Bahrain Bijol`;
+  }
+  if(messageType==="payment"){
+   return `*Assalamu Alaikum ${guardian},*
+
+This is to confirm that the fee payment for *${student}* has been received successfully.
+
+*Amount Paid: ₹${Number(amount||0).toLocaleString("en-IN")}*
+*Fee Month: ${feeMonth||"—"}*
+*Receipt No.: ${receipt||"—"}*
+
+JazakAllahu Khairan.
+
+*Regards,*
+Madrasa Majmaul Bahrain Bijol`;
+  }
+  if(messageType==="holiday"){
+   return `*Assalamu Alaikum ${guardian},*
+
+This is to inform you that *Madrasa Majmaul Bahrain Bijol* will remain closed from *${noticeDate||"—"}* to *${noticeEndDate||"—"}* due to *${noticeReason||"madrasa holiday"}*.
+
+Classes will resume on *${resumeDate||"—"}*, InshaAllah.
+
+JazakAllahu Khairan.
+
+*Regards,*
+Madrasa Majmaul Bahrain Bijol`;
+  }
+  if(messageType==="exam"){
+   return `*Assalamu Alaikum ${guardian},*
+
+This is to inform you that *${examName||"the examination"}* for *${student}* will be held on *${examDate||"—"}* at *${examTime||"—"}*.
+
+Please ensure that the student arrives on time and is properly prepared.
+
+JazakAllahu Khairan.
+
+*Regards,*
+Madrasa Majmaul Bahrain Bijol`;
+  }
+  return `*Assalamu Alaikum ${guardian},*
+
+*Important Notice from Madrasa Majmaul Bahrain Bijol*
+
+${customMessage||"Please check the latest madrasa notice."}
+
+JazakAllahu Khairan for your cooperation and support.
+
+*Regards,*
+Madrasa Majmaul Bahrain Bijol`;
+ }
+
+ function sendComposedWhatsApp(){
+  if(!composerStudent)return;
+  const digits=String(composerStudent.mobile||"").replace(/\\D/g,"");
+  if(!digits)return;
+  const msg=buildWhatsAppMessage(composerStudent);
+  window.open("https://wa.me/91"+digits+"?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
+  setComposerOpen(false);
  }
  return <main className="min-h-screen bg-[#f4f7f5] text-slate-900"><header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8"><div className="flex items-center gap-3"><img src="/mmbb-logo.svg" alt="MMBB" className="h-12 w-12 rounded-full"/><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-green-700">Madrasa Majmaul Bahrain Bijol</p><h1 className="mt-1 text-2xl font-black sm:text-3xl">WhatsApp Messaging</h1></div></div><div className="flex gap-2"><button onClick={()=>{setRefreshing(true);load()}} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold disabled:opacity-60"><FiRefreshCw className={refreshing?"animate-spin":""}/><span className="hidden sm:inline">Refresh</span></button><Link href="/admin/dashboard" className="rounded-xl bg-green-700 px-4 py-2.5 text-sm font-black text-white">Dashboard</Link></div></div></header>
  <section className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><div className="overflow-hidden rounded-[30px] bg-gradient-to-br from-[#063b20] via-[#08743a] to-[#0ba24e] p-7 text-white shadow-xl sm:p-9"><div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-black uppercase tracking-[0.3em] text-green-100">Official WhatsApp Integration</p><h2 className="mt-3 text-4xl font-black sm:text-5xl">Guardian Messaging</h2><p className="mt-3 max-w-3xl text-sm leading-6 text-green-50 sm:text-base">Manage WhatsApp consent, identify students with outstanding fees and prepare messages. Automatic sending will be enabled after Meta WhatsApp Business is connected.</p></div><div className="rounded-2xl border border-white/15 bg-white/10 p-4 lg:min-w-[300px]"><p className="text-xs font-black uppercase tracking-wider text-green-100">Connection</p><p className="mt-2 flex items-center gap-2 text-lg font-black"><FiXCircle/> Not connected yet</p><p className="mt-1 text-xs text-green-100">Meta Business credentials are required.</p></div></div></div>
  <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<FiUsers/>} label="Active Guardians" value={students.length}/><Stat icon={<FiMessageCircle/>} label="WhatsApp Numbers" value={numbers}/><Stat icon={<FiCheckCircle/>} label="Consent Given" value={optedIn}/><Stat icon={<FiSend/>} label="Due + Consent" value={dueOptedIn}/></div>
- <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]"><section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h3 className="text-xl font-black">Recipients</h3><p className="mt-1 text-sm text-slate-500">{tab==="due"?"Students with outstanding fee balance.":"All active students."}</p></div><div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1"><button onClick={()=>setTab("due")} className={"rounded-lg px-3 py-2 text-sm font-black "+(tab==="due"?"bg-white text-green-700 shadow-sm":"text-slate-600")}>Due ({dueStudents.length})</button><button onClick={()=>setTab("all")} className={"rounded-lg px-3 py-2 text-sm font-black "+(tab==="all"?"bg-white text-green-700 shadow-sm":"text-slate-600")}>All ({students.length})</button></div></div>{error&&<div className="m-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}{loading?<div className="p-12 text-center font-bold text-slate-500">Loading WhatsApp recipients...</div>:visible.length===0?<div className="p-12 text-center text-slate-500">No matching students.</div>:<div className="divide-y divide-slate-100">{visible.map(s=>{const due=Math.round(dueMap.get(s.id)||0);return <div key={s.id} className="p-5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h4 className="truncate text-base font-black">{s.student_name||"Student"}</h4>{s.whatsapp_opt_in?<span className="rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-black uppercase text-green-700">Opted in</span>:<span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-500">No consent</span>}</div><p className="mt-1 text-sm text-slate-500">Guardian: <b className="text-slate-700">{s.guardian_name||"—"}</b> · {s.mobile||"No mobile"} · {s.course||"—"}</p>{due>0&&<p className="mt-2 text-sm font-black text-red-700">Outstanding: ₹{due.toLocaleString("en-IN")}</p>}</div><div className="flex flex-wrap gap-2"><button disabled={busy===s.id} onClick={()=>toggleOptIn(s)} className={"rounded-xl border px-3 py-2 text-xs font-black "+(s.whatsapp_opt_in?"border-red-200 bg-red-50 text-red-700":"border-green-200 bg-green-50 text-green-700")}>{s.whatsapp_opt_in?"Opt out":"Mark consent"}</button><button disabled={!s.mobile} onClick={()=>manual(s)} className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-3 py-2 text-xs font-black text-white disabled:opacity-40"><FiMessageCircle/> Manual WhatsApp</button></div></div></div>})}</div>}</section>
+ <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]"><section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h3 className="text-xl font-black">Recipients</h3><p className="mt-1 text-sm text-slate-500">{tab==="due"?"Students with outstanding fee balance.":"All active students."}</p></div><div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1"><button onClick={()=>setTab("due")} className={"rounded-lg px-3 py-2 text-sm font-black "+(tab==="due"?"bg-white text-green-700 shadow-sm":"text-slate-600")}>Due ({dueStudents.length})</button><button onClick={()=>setTab("all")} className={"rounded-lg px-3 py-2 text-sm font-black "+(tab==="all"?"bg-white text-green-700 shadow-sm":"text-slate-600")}>All ({students.length})</button></div></div>{error&&<div className="m-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}{loading?<div className="p-12 text-center font-bold text-slate-500">Loading WhatsApp recipients...</div>:visible.length===0?<div className="p-12 text-center text-slate-500">No matching students.</div>:<div className="divide-y divide-slate-100">{visible.map(s=>{const due=Math.round(dueMap.get(s.id)||0);return <div key={s.id} className="p-5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h4 className="truncate text-base font-black">{s.student_name||"Student"}</h4>{s.whatsapp_opt_in?<span className="rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-black uppercase text-green-700">Opted in</span>:<span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-500">No consent</span>}</div><p className="mt-1 text-sm text-slate-500">Guardian: <b className="text-slate-700">{s.guardian_name||"—"}</b> · {s.mobile||"No mobile"} · {s.course||"—"}</p>{due>0&&<p className="mt-2 text-sm font-black text-red-700">Outstanding: ₹{due.toLocaleString("en-IN")}</p>}</div><div className="flex flex-wrap gap-2"><button disabled={busy===s.id} onClick={()=>toggleOptIn(s)} className={"rounded-xl border px-3 py-2 text-xs font-black "+(s.whatsapp_opt_in?"border-red-200 bg-red-50 text-red-700":"border-green-200 bg-green-50 text-green-700")}>{s.whatsapp_opt_in?"Opt out":"Mark consent"}</button><button disabled={!s.mobile} onClick={()=>manual(s)} className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-3 py-2 text-xs font-black text-white disabled:opacity-40"><FiMessageCircle/> Send WhatsApp</button></div></div></div>})}</div>}</section>
  <aside className="space-y-5"><div className="rounded-3xl border border-amber-200 bg-amber-50 p-6"><p className="text-xs font-black uppercase tracking-[0.2em] text-amber-700">Next step</p><h3 className="mt-2 text-xl font-black text-amber-950">Connect Meta WhatsApp</h3><p className="mt-2 text-sm leading-6 text-amber-900">The official Cloud API requires a Meta Business Portfolio, WhatsApp Business Account and business phone number. Business-initiated messages use approved templates.</p><div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-amber-950"><p className="font-black">Templates</p><ul className="mt-2 space-y-1"><li>• Fee due reminder</li><li>• Payment received</li><li>• Holiday notice</li><li>• Exam notice</li><li>• General madrasa notice</li></ul></div></div><div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-2 text-slate-700"><FiSettings/><h3 className="font-black">Messaging rules</h3></div><ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600"><li>• Only opted-in guardians receive automated messages.</li><li>• Due reminders use the live fee ledger.</li><li>• Every API attempt will be logged.</li><li>• Credentials stay server-side.</li></ul></div></aside></div></section></main>
 }
 function Stat({icon,label,value}:{icon:React.ReactNode;label:string;value:number}){return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 text-slate-400">{icon}<span className="text-[10px] font-black uppercase tracking-wider">{label}</span></div><p className="mt-2 text-3xl font-black text-slate-900">{value}</p></div>}
