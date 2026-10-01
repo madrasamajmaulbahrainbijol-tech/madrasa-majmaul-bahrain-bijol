@@ -16,7 +16,28 @@ export default function WhatsAppPage(){
  const visible=tab==="due"?dueStudents:students;
  const optedIn=students.filter(s=>s.whatsapp_opt_in).length,numbers=students.filter(s=>!!s.mobile).length,dueOptedIn=dueStudents.filter(s=>s.whatsapp_opt_in&&!!s.mobile).length;
  async function toggleOptIn(s:Student){setBusy(s.id);try{const next=!s.whatsapp_opt_in;const {error:e}=await supabase.from("admissions").update({whatsapp_opt_in:next,whatsapp_opt_in_at:next?new Date().toISOString():null,whatsapp_opted_out_at:next?null:new Date().toISOString()}).eq("id",s.id);if(e)throw e;setStudents(c=>c.map(x=>x.id===s.id?{...x,whatsapp_opt_in:next}:x))}catch(e:any){setError(e?.message||"Could not update consent.")}finally{setBusy("")}}
- function manual(s:Student){const digits=String(s.mobile||"").replace(/\\D/g,"");if(!digits)return;const due=Math.round(dueMap.get(s.id)||0);const guardian=s.guardian_name||"Parent/Guardian";const student=s.student_name||"Student";const msg="Assalamu Alaikum "+guardian+",\\n\\nThis is a polite fee reminder from Madrasa Majmaul Bahrain Bijol regarding "+student+".\\n\\nOutstanding Fee Balance: ₹"+due.toLocaleString("en-IN")+"\\n\\nBarah-e-karam fee ki adaigi jald se jald kar dein. Agar fee already jama kar di gayi hai, to please is message ko ignore karein.\\n\\nJazakAllahu Khairan for your cooperation and support.\\n\\nRegards,\\nMadrasa Majmaul Bahrain Bijol";window.open("https://wa.me/91"+digits+"?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer")}
+ function manual(s:Student){
+  const digits=String(s.mobile||"").replace(/\\D/g,"");
+  if(!digits)return;
+  const due=Math.round(dueMap.get(s.id)||0);
+  const guardian=s.guardian_name||"Parent/Guardian";
+  const student=s.student_name||"Student";
+  const msg=[
+   "Assalamu Alaikum "+guardian+",",
+   "",
+   "This is a polite fee reminder from Madrasa Majmaul Bahrain Bijol regarding "+student+".",
+   "",
+   "Outstanding Fee Balance: ₹"+due.toLocaleString("en-IN"),
+   "",
+   "Barah-e-karam fee ki adaigi jald se jald kar dein. Agar fee already jama kar di gayi hai, to please is message ko ignore karein.",
+   "",
+   "JazakAllahu Khairan for your cooperation and support.",
+   "",
+   "Regards,",
+   "Madrasa Majmaul Bahrain Bijol"
+  ].join("\\n");
+  window.open("https://wa.me/91"+digits+"?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer")
+ }
  return <main className="min-h-screen bg-[#f4f7f5] text-slate-900"><header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8"><div className="flex items-center gap-3"><img src="/mmbb-logo.svg" alt="MMBB" className="h-12 w-12 rounded-full"/><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-green-700">Madrasa Majmaul Bahrain Bijol</p><h1 className="mt-1 text-2xl font-black sm:text-3xl">WhatsApp Messaging</h1></div></div><div className="flex gap-2"><button onClick={()=>{setRefreshing(true);load()}} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold disabled:opacity-60"><FiRefreshCw className={refreshing?"animate-spin":""}/><span className="hidden sm:inline">Refresh</span></button><Link href="/admin/dashboard" className="rounded-xl bg-green-700 px-4 py-2.5 text-sm font-black text-white">Dashboard</Link></div></div></header>
  <section className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><div className="overflow-hidden rounded-[30px] bg-gradient-to-br from-[#063b20] via-[#08743a] to-[#0ba24e] p-7 text-white shadow-xl sm:p-9"><div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-black uppercase tracking-[0.3em] text-green-100">Official WhatsApp Integration</p><h2 className="mt-3 text-4xl font-black sm:text-5xl">Guardian Messaging</h2><p className="mt-3 max-w-3xl text-sm leading-6 text-green-50 sm:text-base">Manage WhatsApp consent, identify students with outstanding fees and prepare messages. Automatic sending will be enabled after Meta WhatsApp Business is connected.</p></div><div className="rounded-2xl border border-white/15 bg-white/10 p-4 lg:min-w-[300px]"><p className="text-xs font-black uppercase tracking-wider text-green-100">Connection</p><p className="mt-2 flex items-center gap-2 text-lg font-black"><FiXCircle/> Not connected yet</p><p className="mt-1 text-xs text-green-100">Meta Business credentials are required.</p></div></div></div>
  <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<FiUsers/>} label="Active Guardians" value={students.length}/><Stat icon={<FiMessageCircle/>} label="WhatsApp Numbers" value={numbers}/><Stat icon={<FiCheckCircle/>} label="Consent Given" value={optedIn}/><Stat icon={<FiSend/>} label="Due + Consent" value={dueOptedIn}/></div>
