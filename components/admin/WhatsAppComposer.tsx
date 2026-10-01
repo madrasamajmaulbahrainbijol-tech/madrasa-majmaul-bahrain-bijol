@@ -104,15 +104,20 @@ JazakAllahu Khairan for your cooperation and support.
 Madrasa Majmaul Bahrain Bijol`;
   }, [type, guardian, studentName, due, amount, feeMonth, receipt, startDate, endDate, resumeDate, reason, examName, examDate, examTime, customMessage]);
 
-  function send() {
+  const whatsappUrl = useMemo(() => {
     const digits = String(student.mobile || "").replace(/\D/g, "");
-    if (!digits) return;
+    if (!digits) return "";
     const phone = digits.length === 10 ? "91" + digits : digits.startsWith("91") ? digits : "91" + digits;
-    const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
-    const popup = window.open(url, "_blank", "noopener,noreferrer");
-    if (!popup) window.location.href = url;
-    onClose();
-  }
+    return "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
+  }, [student.mobile, message]);
+
+  const types: Array<[MessageType, string]> = [
+    ["fee", "Fee Due Reminder"],
+    ["payment", "Payment Received"],
+    ["holiday", "Holiday Notice"],
+    ["exam", "Exam Notice"],
+    ["general", "General Notice"],
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
@@ -123,21 +128,26 @@ Madrasa Majmaul Bahrain Bijol`;
             <h3 className="mt-1 text-xl font-black">{studentName}</h3>
             <p className="text-sm text-slate-500">{student.mobile || "No mobile number"}</p>
           </div>
-          <button onClick={onClose} className="rounded-xl border border-slate-200 p-2 text-slate-500">
+          <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 p-2 text-slate-500">
             <FiXCircle />
           </button>
         </div>
 
         <div className="space-y-5 p-5">
           <div>
-            <label className="text-xs font-black uppercase tracking-wider text-slate-500">Message Type</label>
-            <select value={type} onChange={(e) => setType(e.target.value as MessageType)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold">
-              <option value="fee">Fee Due Reminder</option>
-              <option value="payment">Payment Received</option>
-              <option value="holiday">Holiday Notice</option>
-              <option value="exam">Exam Notice</option>
-              <option value="general">General Notice</option>
-            </select>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-500">Message Type</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {types.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setType(value)}
+                  className={"rounded-xl border px-4 py-3 text-left text-sm font-black transition " + (type === value ? "border-green-600 bg-green-50 text-green-800 shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-green-300")}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {type === "payment" && (
@@ -175,10 +185,21 @@ Madrasa Majmaul Bahrain Bijol`;
           </div>
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-            <button onClick={onClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">Cancel</button>
-            <button onClick={send} className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-black text-white">
-              <FiSend /> Open WhatsApp
-            </button>
+            <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">Cancel</button>
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-black text-white hover:bg-green-800"
+              >
+                <FiSend /> Open WhatsApp
+              </a>
+            ) : (
+              <button type="button" disabled className="inline-flex items-center gap-2 rounded-xl bg-slate-300 px-5 py-3 text-sm font-black text-white">
+                <FiSend /> No WhatsApp Number
+              </button>
+            )}
           </div>
         </div>
       </div>
