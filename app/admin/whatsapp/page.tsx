@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FiCheckCircle, FiMessageCircle, FiRefreshCw, FiSend, FiSettings, FiUsers, FiXCircle } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
@@ -93,7 +93,7 @@ Madrasa Majmaul Bahrain Bijol`;
   if(!phone){setError("This guardian does not have a valid WhatsApp mobile number.");return;}
   const message=buildWhatsAppMessage(composerStudent).trim();
   if(!message){setError("Please enter a message before sending.");return;}
-  const url="https://wa.me/"+phone+"?text="+encodeURIComponent(message);
+  const url="https://wa.me/"+phone+"?text="+encodeURIComponent(message).replace(/%0A/g,"%0A");
   const popup=window.open(url,"_blank","noopener,noreferrer");
   if(!popup) window.location.href=url;
   setComposerOpen(false);
@@ -114,4 +114,4 @@ Madrasa Majmaul Bahrain Bijol`;
  <div className="flex justify-end gap-3 border-t border-slate-100 pt-4"><button onClick={()=>setComposerOpen(false)} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">Cancel</button><button onClick={sendComposedWhatsApp} className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-black text-white"><FiSend/> Open WhatsApp</button></div></div></div>}
  </section></main>
 }
-function Stat({icon,label,value}:{icon:React.ReactNode;label:string;value:number}){return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 text-slate-400">{icon}<span className="text-[10px] font-black uppercase tracking-wider">{label}</span></div><p className="mt-2 text-3xl font-black text-slate-900">{value}</p></div>}
+function Stat({icon,label,value}:{icon:ReactNode;label:string;value:number}){return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 text-slate-400">{icon}<span className="text-[10px] font-black uppercase tracking-wider">{label}</span></div><p className="mt-2 text-3xl font-black text-slate-900">{value}</p></div>}
