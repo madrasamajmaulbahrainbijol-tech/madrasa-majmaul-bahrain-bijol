@@ -80,7 +80,7 @@ JazakAllahu Khairan for your cooperation and support.
 Madrasa Majmaul Bahrain Bijol`;
  }
  function normalizeWhatsAppNumber(value:string){
-  const digits=String(value||"").replace(/\\D/g,"");
+  const digits=String(value||"").replace(/\D/g,"");
   if(!digits)return "";
   if(digits.startsWith("91")&&digits.length===12)return digits;
   if(digits.length===11&&digits.startsWith("0"))return "91"+digits.slice(1);
