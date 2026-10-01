@@ -105,10 +105,22 @@ Madrasa Majmaul Bahrain Bijol`;
   }, [type, guardian, studentName, due, amount, feeMonth, receipt, startDate, endDate, resumeDate, reason, examName, examDate, examTime, customMessage]);
 
   const whatsappUrl = useMemo(() => {
-    const digits = String(student.mobile || "").replace(/\D/g, "");
+    let digits = String(student.mobile || "").replace(/\D/g, "");
     if (!digits) return "";
-    const phone = digits.length === 10 ? "91" + digits : digits.startsWith("91") ? digits : "91" + digits;
-    return "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
+
+    // Normalize common Indian formats safely:
+    // 9876543210 -> 919876543210
+    // 09876543210 -> 919876543210
+    // 919876543210 / +91 9876543210 -> 919876543210
+    if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+    const phone = digits.length === 10
+      ? "91" + digits
+      : digits.length === 12 && digits.startsWith("91")
+        ? digits
+        : "";
+
+    if (!phone) return "";
+    return "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(message);
   }, [student.mobile, message]);
 
   const types: Array<[MessageType, string]> = [
@@ -187,17 +199,18 @@ Madrasa Majmaul Bahrain Bijol`;
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
             <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">Cancel</button>
             {whatsappUrl ? (
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.assign(whatsappUrl);
+                }}
                 className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-black text-white hover:bg-green-800"
               >
-                <FiSend /> Open WhatsApp
-              </a>
+                <FiSend /> Open WhatsApp & Send
+              </button>
             ) : (
               <button type="button" disabled className="inline-flex items-center gap-2 rounded-xl bg-slate-300 px-5 py-3 text-sm font-black text-white">
-                <FiSend /> No WhatsApp Number
+                <FiSend /> Invalid / Missing Number
               </button>
             )}
           </div>
