@@ -179,8 +179,8 @@ Madrasa Majmaul Bahrain Bijol`;
               <p className="text-xs font-black uppercase tracking-widest text-green-700">Bulk WhatsApp</p>
               <h3 className="mt-1 text-xl font-black">Guardian {index + 1} of {recipients.length}</h3>
             </div>
-            <button type="button" onClick={() => setStarted(false)} className="rounded-xl border border-slate-200 p-2 text-slate-500">
-              <FiXCircle />
+            <button type="button" onClick={() => setStarted(false)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-700 hover:bg-red-100">
+              <FiXCircle /> Stop Sending
             </button>
           </div>
           <div className="space-y-5 p-5">
@@ -195,9 +195,12 @@ Madrasa Majmaul Bahrain Bijol`;
             <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
               {currentMessage}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <button type="button" onClick={openCurrent} className="rounded-xl bg-green-700 px-5 py-3 text-sm font-black text-white hover:bg-green-800">
                 Open WhatsApp
+              </button>
+              <button type="button" onClick={() => setStarted(false)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-700 hover:bg-red-100">
+                <FiXCircle /> Stop
               </button>
               <button type="button" onClick={nextRecipient} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">
                 {index >= recipients.length - 1 ? "Finish" : "Next Guardian"} <FiChevronRight />
