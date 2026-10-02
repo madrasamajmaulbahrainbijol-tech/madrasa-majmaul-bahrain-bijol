@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FiSend, FiXCircle } from "react-icons/fi";
+import { FiSend, FiXCircle, FiCheckCircle } from "react-icons/fi";
 
 type Student = {
   id: string;
@@ -31,6 +31,11 @@ export default function WhatsAppComposer({ student, due, onClose }: Props) {
   const [examDate, setExamDate] = useState("");
   const [examTime, setExamTime] = useState("");
   const [customMessage, setCustomMessage] = useState("");
+  const [templateName, setTemplateName] = useState("");
+  const [languageCode, setLanguageCode] = useState("en_US");
+  const [apiParameters, setApiParameters] = useState("");
+  const [apiBusy, setApiBusy] = useState(false);
+  const [apiResult, setApiResult] = useState("");
 
   const guardian = student.guardian_name || "Parent/Guardian";
   const studentName = student.student_name || "Student";
@@ -123,6 +128,45 @@ Madrasa Majmaul Bahrain Bijol`;
     return "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(message);
   }, [student.mobile, message]);
 
+  const defaultParameters = useMemo(() => {
+    if (type === "fee") return [guardian, studentName, String(due)];
+    if (type === "payment") return [guardian, studentName, amount, feeMonth, receipt];
+    if (type === "holiday") return [guardian, startDate, endDate, resumeDate, reason];
+    if (type === "exam") return [guardian, studentName, examName, examDate, examTime];
+    return [guardian, customMessage];
+  }, [type, guardian, studentName, due, amount, feeMonth, receipt, startDate, endDate, resumeDate, reason, examName, examDate, examTime, customMessage]);
+
+  async function sendViaApi() {
+    setApiResult("");
+    if (!templateName.trim()) {
+      setApiResult("Template name enter karein.");
+      return;
+    }
+    setApiBusy(true);
+    try {
+      const params = apiParameters.trim()
+        ? apiParameters.split(",").map((v) => v.trim())
+        : defaultParameters;
+      const { data, error } = await (await import("@/lib/supabase")).supabase.functions.invoke("whatsapp-send", {
+        body: {
+          admission_id: student.id,
+          message_type: type,
+          template_name: templateName.trim(),
+          language_code: languageCode.trim() || "en_US",
+          body_parameters: params,
+          message_body: message,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setApiResult("API message accepted by WhatsApp. Message ID: " + (data?.provider_message_id || "received"));
+    } catch (error: any) {
+      setApiResult(error?.message || "API message send nahi ho saka.");
+    } finally {
+      setApiBusy(false);
+    }
+  }
+
   const types: Array<[MessageType, string]> = [
     ["fee", "Fee Due Reminder"],
     ["payment", "Payment Received"],
@@ -196,8 +240,30 @@ Madrasa Majmaul Bahrain Bijol`;
             <div className="mt-2 whitespace-pre-wrap rounded-2xl border border-green-100 bg-green-50 p-5 text-sm leading-7 text-slate-700">{message}</div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+            <div className="flex items-center gap-2 text-blue-900">
+              <FiCheckCircle />
+              <p className="text-sm font-black">Official Meta WhatsApp API</p>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-blue-800">Approved Meta template ka exact name yahan dein. Agar template body parameters ka order alag hai, comma-separated values manually set kar sakte hain.</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Template name e.g. fee_due_reminder" className="rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm" />
+              <input value={languageCode} onChange={(e) => setLanguageCode(e.target.value)} placeholder="Language e.g. en_US" className="rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm" />
+            </div>
+            <input value={apiParameters} onChange={(e) => setApiParameters(e.target.value)} placeholder="Optional parameters: Guardian, Student, 1500" className="mt-3 w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm" />
+            {apiResult && <p className={"mt-3 rounded-xl p-3 text-xs font-bold " + (apiResult.startsWith("API message accepted") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>{apiResult}</p>}
+          </div>
+
+          <div className="flex flex-col justify-end gap-3 border-t border-slate-100 pt-4 sm:flex-row">
             <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">Cancel</button>
+            <button
+              type="button"
+              onClick={sendViaApi}
+              disabled={apiBusy}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-black text-white hover:bg-blue-800 disabled:opacity-60"
+            >
+              <FiSend /> {apiBusy ? "Sending via API..." : "Send via Official API"}
+            </button>
             {whatsappUrl ? (
               <button
                 type="button"
