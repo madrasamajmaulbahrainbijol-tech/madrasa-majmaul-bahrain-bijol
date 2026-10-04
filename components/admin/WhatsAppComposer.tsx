@@ -31,7 +31,7 @@ export default function WhatsAppComposer({ student, due, onClose }: Props) {
   const [examDate, setExamDate] = useState("");
   const [examTime, setExamTime] = useState("");
   const [customMessage, setCustomMessage] = useState("");
-  const [templateName, setTemplateName] = useState("");
+  const [templateName, setTemplateName] = useState("fee_due_reminder");
   const [languageCode, setLanguageCode] = useState("en_US");
   const [apiParameters, setApiParameters] = useState("");
   const [apiBusy, setApiBusy] = useState(false);
