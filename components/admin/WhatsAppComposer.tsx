@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FiSend, FiXCircle, FiCheckCircle } from "react-icons/fi";
+import WhatsAppImageCard from "@/components/admin/WhatsAppImageCard";
 
 type Student = {
   id: string;
@@ -234,6 +235,27 @@ Madrasa Majmaul Bahrain Bijol`;
           {type === "general" && (
             <textarea value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} rows={5} placeholder="Write your notice here..." className="w-full rounded-xl border border-slate-200 px-4 py-3" />
           )}
+
+          <WhatsAppImageCard
+            type={type}
+            studentId={student.id}
+            studentName={studentName}
+            guardian={guardian}
+            mobile={student.mobile}
+            amount={amount}
+            feeMonth={feeMonth}
+            receipt={receipt}
+            startDate={startDate}
+            endDate={endDate}
+            resumeDate={resumeDate}
+            reason={reason}
+            examName={examName}
+            examDate={examDate}
+            examTime={examTime}
+            customMessage={customMessage}
+            due={due}
+            message={message}
+          />
 
           <div>
             <p className="text-xs font-black uppercase tracking-wider text-slate-500">Message Preview</p>
