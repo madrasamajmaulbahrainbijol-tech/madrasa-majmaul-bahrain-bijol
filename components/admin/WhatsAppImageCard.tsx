@@ -81,7 +81,45 @@ export default function WhatsAppImageCard(props: Props) {
     setBusy(true);
     setResult("");
     try {
-      const canvas = await html2canvas(ref.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false });
+      const canvas = await html2canvas(ref.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Tailwind can expose modern lab()/oklch() colors in computed CSS.
+          // html2canvas does not understand lab(), so give the captured card
+          // safe hex fallbacks without changing the live UI.
+          const palette: Record<string, string> = {
+            "white": "#ffffff",
+            "slate-900": "#0f172a",
+            "slate-800": "#1e293b",
+            "slate-600": "#475569",
+            "slate-400": "#94a3b8",
+            "slate-200": "#e2e8f0",
+            "slate-100": "#f1f5f9",
+            "emerald-900": "#064e3b",
+            "emerald-800": "#065f46",
+            "emerald-700": "#047857",
+            "emerald-50": "#ecfdf5",
+            "emerald-100": "#d1fae5",
+            "amber-50": "#fffbeb",
+          };
+
+          clonedDoc.querySelectorAll<HTMLElement>("[class]").forEach((el) => {
+            const tokens = String(el.className).split(/\\s+/);
+            for (const token of tokens) {
+              const match = token.match(/^(?:text|bg|border)-(.+)$/);
+              if (!match) continue;
+              const value = palette[match[1]];
+              if (!value) continue;
+              if (token.startsWith("text-")) el.style.setProperty("color", value, "important");
+              if (token.startsWith("bg-")) el.style.setProperty("background-color", value, "important");
+              if (token.startsWith("border-")) el.style.setProperty("border-color", value, "important");
+            }
+          });
+        },
+      });
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 1));
       if (!blob) throw new Error("Image generate nahi ho saki.");
       const safeName = props.studentName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "student";
