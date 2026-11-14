@@ -10,6 +10,7 @@ const groups: { title: string; items: NavItem[] }[] = [
     { label: "Take Admission", href: "/admin/admissions/take", icon: "+" },
     { label: "Admissions", href: "/admin/admissions", icon: "▤" },
     { label: "Students", href: "/admin/students", icon: "♙" },
+    { label: "Attendance", href: "/admin/attendance", icon: "◷" },
     { label: "Bulk Print", href: "/admin/bulk-print", icon: "▧" },
   ]},
   { title: "FINANCE & ACCOUNTS", items: [
