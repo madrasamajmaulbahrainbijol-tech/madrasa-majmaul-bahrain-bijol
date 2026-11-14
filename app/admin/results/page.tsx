@@ -8,7 +8,7 @@ import { downloadMarksheetPdf, marksheetPrintHtml, openMarksheetPrint } from "@/
 
 type Student = {
   id: string; student_name: string; student_id: string | null; course: string | null;
-  father_name?: string | null; guardian_name?: string | null; date_of_birth?: string | null;
+  father_name?: string | null; guardian_name?: string | null; date_of_birth?: string | null; student_photo_url?: string | null; photoUrl?: string;
   application_number?: string | null; message?: string | null;
 };
 type Subject = { id: string; subject: string; full_marks: number; passing_marks: number; sort_order: number };
@@ -43,7 +43,7 @@ export default function AdminResultsPage() {
     setError("");
     const { data: studentRows, error: studentError } = await supabase
       .from("admissions")
-      .select("id,student_name,student_id,course,father_name,guardian_name,date_of_birth,application_number,message")
+      .select("id,student_name,student_id,course,father_name,guardian_name,date_of_birth,student_photo_url,application_number,message")
       .eq("status", "approved")
       .eq("account_status", "approved")
       .order("student_name");
@@ -53,7 +53,15 @@ export default function AdminResultsPage() {
       .select("id,exam_name,exam_date,session,active,exam_subjects(id,subject,full_marks,passing_marks,sort_order)")
       .order("created_at", { ascending: false });
     if (examError) { setError(examError.message); setLoading(false); return; }
-    setStudents((studentRows || []) as Student[]);
+    const rawStudents = (studentRows || []) as Student[];
+    const studentsWithPhotos = await Promise.all(rawStudents.map(async (student) => {
+      const photo = student.student_photo_url;
+      if (!photo) return student;
+      if (/^https?:\/\//i.test(photo)) return { ...student, photoUrl: photo };
+      const { data: signed } = await supabase.storage.from("admission-documents").createSignedUrl(photo, 3600);
+      return { ...student, photoUrl: signed?.signedUrl || "" };
+    }));
+    setStudents(studentsWithPhotos);
     const normalized = (examRows || []).map((e: any) => ({
       ...e,
       exam_subjects: [...(e.exam_subjects || [])].sort((a: Subject, b: Subject) => a.sort_order - b.sort_order),
@@ -179,6 +187,7 @@ export default function AdminResultsPage() {
     const html = selectedResultPairs.map(({ student, result }) => marksheetPrintHtml(
       student,
       { exam_name: selectedExam.exam_name, exam_date: selectedExam.exam_date, session: selectedExam.session, student_exam_marks: result.student_exam_marks },
+      student.photoUrl || undefined,
     )).join("");
     const name = (selectedExam.exam_name.replace(/[^a-z0-9]+/gi, "_") || "Exam") + "_Marksheets";
     if (download) {
