@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import StudentMediaEditor from "./StudentMediaEditor";
+import AdminShell from "@/components/admin/AdminShell";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -62,9 +63,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <AdminShell>
       {children}
       <StudentMediaEditor />
-    </>
+    </AdminShell>
   );
 }
