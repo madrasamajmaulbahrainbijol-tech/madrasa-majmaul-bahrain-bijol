@@ -93,10 +93,54 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
   return (
     <div className="min-h-screen bg-[#eaf4ef] text-slate-800">
       <style jsx global>{`
-        .admin-glass { background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(222,245,234,.88)); border:1px solid rgba(255,255,255,.96); box-shadow:0 14px 38px rgba(10,75,48,.10); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+        .admin-glass {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          background:
+            radial-gradient(ellipse at 100% 0%, rgba(167,139,250,.17), transparent 42%),
+            radial-gradient(ellipse at 0% 100%, rgba(45,212,191,.16), transparent 46%),
+            linear-gradient(135deg, rgba(255,255,255,.78), rgba(232,247,255,.63) 48%, rgba(236,253,245,.72));
+          border: 1px solid rgba(255,255,255,.88);
+          box-shadow: 0 18px 48px rgba(15,72,91,.12), 0 5px 16px rgba(91,72,164,.07), inset 0 1px 0 rgba(255,255,255,.9);
+          backdrop-filter: blur(26px) saturate(175%);
+          -webkit-backdrop-filter: blur(26px) saturate(175%);
+          transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, border-color .28s ease;
+        }
+        .admin-glass::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          pointer-events: none;
+          inset: 0;
+          opacity: .75;
+          background: linear-gradient(118deg, rgba(255,255,255,.5), transparent 34%, transparent 68%, rgba(196,181,253,.12));
+        }
+        .admin-grid-bg {
+          background-color: #eaf4ef;
+          background-image:
+            radial-gradient(ellipse at 8% 8%, rgba(45,212,191,.22), transparent 28%),
+            radial-gradient(ellipse at 92% 12%, rgba(139,92,246,.18), transparent 30%),
+            radial-gradient(ellipse at 78% 88%, rgba(56,189,248,.17), transparent 28%),
+            radial-gradient(ellipse at 18% 78%, rgba(251,191,36,.12), transparent 26%),
+            radial-gradient(rgba(16,110,90,.10) 1px, transparent 1px),
+            linear-gradient(135deg, #e7f8f2, #edf2ff 52%, #e9f8fb);
+          background-size: auto, auto, auto, auto, 24px 24px, 100% 100%;
+          background-attachment: fixed;
+        }
+        .admin-grid-bg .admin-glass {
+          box-shadow: 0 20px 54px rgba(13,78,93,.13), 0 6px 20px rgba(109,78,180,.08), inset 0 1px 0 rgba(255,255,255,.92);
+        }
+        .admin-grid-bg .admin-glass:hover {
+          transform: translateY(-4px);
+          border-color: rgba(255,255,255,.98);
+          box-shadow: 0 26px 62px rgba(13,78,93,.18), 0 10px 26px rgba(109,78,180,.12), inset 0 1px 0 rgba(255,255,255,1);
+        }
         .sidebar-scroll { scrollbar-width:thin; scrollbar-color:rgba(167,243,208,.25) transparent; }
-        .admin-grid-bg { background-color:#eaf4ef; background-image:radial-gradient(rgba(16,110,70,.13) 1px, transparent 1px),linear-gradient(135deg,rgba(219,245,231,.55),rgba(239,244,255,.62)); background-size:22px 22px,100% 100%; }
-        .admin-grid-bg .admin-glass { box-shadow:0 16px 42px rgba(13,78,53,.11); }
+        @media (prefers-reduced-motion: reduce) {
+          .admin-glass { transition: none !important; }
+          .admin-grid-bg .admin-glass:hover { transform: none; }
+        }
       `}</style>
 
       {sidebarOpen && <div className="fixed inset-0 z-[60]">
