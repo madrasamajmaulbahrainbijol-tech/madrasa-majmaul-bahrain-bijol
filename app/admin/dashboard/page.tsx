@@ -169,8 +169,8 @@ export default function AdminDashboardPage() {
       <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric icon="♙" label="Active Students" value={stats.students.toLocaleString("en-IN")} hint="Approved student accounts" color="bg-violet-100 text-violet-700" onClick={() => router.push("/admin/students")} />
         <Metric icon="₹" label="Outstanding Fees" value={money(stats.due)} hint={stats.studentsWithDue + " students with pending balance"} color="bg-amber-100 text-amber-700" onClick={() => router.push("/admin/fee-account")} />
-        <Metric icon="♧" label="Active Staff" value={stats.staff.toLocaleString("en-IN")} hint={stats.teachers + " active teacher profiles"} color="bg-sky-100 text-sky-700" onClick={() => router.push("/admin/teachers")} />
-        <Metric icon="◷" label="Today's Attendance" value={stats.attendanceMarked.toLocaleString("en-IN")} hint={attendanceRate + "% present among marked records"} color="bg-emerald-100 text-emerald-700" onClick={() => router.push("/admin/students")} />
+        <Metric icon="♧" label="Active Staff" value={stats.staff.toLocaleString("en-IN")} hint={stats.teachers + " active teacher profiles"} color="bg-sky-100 text-sky-700" onClick={() => router.push("/admin/staff-account")} />
+        <Metric icon="◷" label="Today's Attendance" value={stats.attendanceMarked.toLocaleString("en-IN")} hint={attendanceRate + "% present among marked records"} color="bg-emerald-100 text-emerald-700" onClick={() => router.push("/admin/attendance")} />
       </section>
 
       <section className="mt-6 grid gap-5 xl:grid-cols-2">
