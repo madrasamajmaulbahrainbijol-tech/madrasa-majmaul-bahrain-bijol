@@ -1,38 +1,271 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiCheck, FiChevronRight, FiDownload, FiEdit3, FiPrinter, FiPlus, FiSave, FiSearch, FiTrash2, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiCheck, FiChevronDown, FiDownload, FiPrinter, FiPlus, FiSave, FiSearch, FiToggleLeft, FiToggleRight, FiTrash2, FiX } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
+import { downloadMarksheetPdf, marksheetPrintHtml, openMarksheetPrint } from "@/lib/marksheet-print";
 
-type Student={id:string;student_name:string;student_id:string|null;course:string|null;father_name?:string|null;guardian_name?:string|null;student_photo_url?:string|null};
-type Mark={id?:string;subject:string;max_marks:number;obtained_marks:number;grade:string|null;result_status:"Pass"|"Fail";remarks:string|null};
-type Exam={id:string;admission_id:string;exam_type:"annual"|"common_test";exam_name:string;exam_date:string|null;session:string|null;remarks:string|null;student_exam_marks:Mark[]};
-type Row={subject:string;max_marks:string;obtained_marks:string;remarks:string};
+type Student = {
+  id: string; student_name: string; student_id: string | null; course: string | null;
+  father_name?: string | null; guardian_name?: string | null; date_of_birth?: string | null;
+  application_number?: string | null; message?: string | null;
+};
+type Subject = { id: string; subject: string; full_marks: number; passing_marks: number; sort_order: number };
+type Exam = { id: string; exam_name: string; exam_date: string | null; session: string | null; active: boolean; exam_subjects: Subject[] };
+type Mark = { id: string; subject: string; max_marks: number; obtained_marks: number; grade: string | null; result_status: "Pass" | "Fail"; remarks: string | null };
+type SavedResult = { id: string; admission_id: string; remarks: string | null; student_exam_marks: Mark[] };
+type SubjectDraft = { subject: string; full_marks: string; passing_marks: string };
 
-const blank=():Row=>({subject:"",max_marks:"100",obtained_marks:"",remarks:""});
-const grade=(p:number)=>p>=90?"A+":p>=80?"A":p>=70?"B+":p>=60?"B":p>=50?"C":p>=40?"D":"F";
-const safe=(v:unknown)=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;");
-const niceDate=(v:string|null)=>v?new Date(`${v}T00:00:00`).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";
+const blankSubject = (): SubjectDraft => ({ subject: "", full_marks: "100", passing_marks: "40" });
+const fmtDate = (value: string | null) => value ? new Date(value + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-function printResults(items:{student:Student;exam:Exam}[],download=false){
- if(!items.length)return;
- const pages=items.map(({student,exam})=>{const max=exam.student_exam_marks.reduce((s,m)=>s+Number(m.max_marks||0),0);const got=exam.student_exam_marks.reduce((s,m)=>s+Number(m.obtained_marks||0),0);const pct=max?got/max*100:0;const pass=exam.student_exam_marks.length>0&&exam.student_exam_marks.every(m=>m.result_status==="Pass");const rows=exam.student_exam_marks.map((m,i)=>`<tr><td>${i+1}</td><td class="left">${safe(m.subject)}</td><td>${m.max_marks}</td><td>${m.obtained_marks}</td><td>${(Number(m.obtained_marks)/Number(m.max_marks)*100).toFixed(1)}%</td><td>${safe(m.grade||grade(Number(m.obtained_marks)/Number(m.max_marks)*100))}</td><td>${m.result_status}</td></tr>`).join("");return `<section class="page"><div class="official">MADRASA MAJMAUL BAHRAIN BIJOL • OFFICIAL ACADEMIC DOCUMENT</div><header><img src="/mmbb-logo.svg"><div><h1>Madrasa Majmaul Bahrain Bijol</h1><div class="urdu">مدرسہ مجمع البحرین بیجول</div><p>BIJOL KATIHAR BIHAR</p></div></header><div class="title">MARKS STATEMENT</div><div class="meta"><div><b>Examination</b><span>${safe(exam.exam_name)}</span></div><div><b>Date</b><span>${niceDate(exam.exam_date)}</span></div><div><b>Session</b><span>${safe(exam.session||"—")}</span></div><div><b>Result</b><span>${pass?"PASS":"FAIL"}</span></div></div><div class="student"><div><b>Student Name</b><span>${safe(student.student_name)}</span></div><div><b>Student ID</b><span>${safe(student.student_id||"—")}</span></div><div><b>Father / Guardian</b><span>${safe(student.father_name||student.guardian_name||"—")}</span></div><div><b>Course</b><span>${safe(student.course||"—")}</span></div></div><table><thead><tr><th>S.No.</th><th>Subject</th><th>Full Marks</th><th>Marks Obtained</th><th>%</th><th>Grade</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table><div class="summary"><div><b>Full Marks</b><strong>${max}</strong></div><div><b>Obtained</b><strong>${got}</strong></div><div><b>Percentage</b><strong>${pct.toFixed(2)}%</strong></div><div><b>Grade</b><strong>${grade(pct)}</strong></div></div><div class="final">FINAL RESULT : ${pass?"PASS":"FAIL"}</div><div class="grading"><b>Grading:</b> A+ 90–100 &nbsp; A 80–89 &nbsp; B+ 70–79 &nbsp; B 60–69 &nbsp; C 50–59 &nbsp; D 40–49 &nbsp; F Below 40</div><div class="remarks"><b>Remarks:</b> ${safe(exam.remarks||"")}</div><div class="sign"><span>Class / Subject Teacher</span><span>Examination In-charge</span><span>Principal / Authorized Signatory</span></div><footer>Issued by Madrasa Majmaul Bahrain Bijol • BIJOL KATIHAR BIHAR</footer></section>`}).join("");
- const first=items[0].student.student_name.trim().replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_|_$/g,"")||"Students";const w=window.open("","_blank","width=1200,height=950");if(!w)return;w.document.write(`<!doctype html><html><head><title>${safe(first)}${items.length>1?"_Results":"_Marksheet"}</title><style>@page{size:A4 portrait;margin:9mm}*{box-sizing:border-box}body{margin:0;background:#e9eeeb;color:#17231c;font-family:Arial,Helvetica,sans-serif}.page{width:190mm;min-height:279mm;margin:8mm auto;background:#fff;border:1px solid #aebdb4;padding:10mm;page-break-after:always;position:relative}.page:last-child{page-break-after:auto}.official{border:2px solid #075c2d;text-align:center;padding:6px;color:#075c2d;font-size:8px;font-weight:900;letter-spacing:.18em}header{display:flex;align-items:center;justify-content:center;gap:16px;border-bottom:4px double #075c2d;padding:10px 0 12px}header img{width:66px;height:66px;object-fit:contain}header h1{margin:0;color:#075c2d;font-size:24px}header .urdu{font-size:21px;font-weight:900;color:#075c2d;margin-top:3px}header p{margin:4px 0 0;color:#627169;font-size:10px;font-weight:800}.title{width:max-content;margin:12px auto;border:2px solid #075c2d;padding:6px 24px;color:#075c2d;font-weight:900;letter-spacing:.15em;font-size:17px}.meta{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #b9c9c0}.meta div,.student div{padding:8px 9px;border-right:1px solid #c7d2cb;border-bottom:1px solid #c7d2cb}.meta div:last-child{border-right:0}.meta b,.student b{display:block;color:#68766f;text-transform:uppercase;font-size:7px;letter-spacing:.08em}.meta span,.student span{display:block;font-size:11px;font-weight:900;margin-top:3px}.student{display:grid;grid-template-columns:1fr 1fr;margin-top:10px;border:1px solid #b9c9c0;background:#f5f8f6}.student div:nth-child(even){border-right:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #9faea5;padding:7px 6px;text-align:center;font-size:9.5px}th{background:#075c2d;color:white;text-transform:uppercase;font-size:8px}td.left{text-align:left;font-weight:800}tbody tr:nth-child(even){background:#f7faf8}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:11px}.summary div{border:1px solid #b9c9c0;text-align:center;padding:7px}.summary b{display:block;font-size:7px;color:#65746c;text-transform:uppercase}.summary strong{display:block;font-size:14px;color:#075c2d;margin-top:2px}.final{margin-top:11px;border:2px solid #075c2d;background:#edf7f1;text-align:center;padding:8px;color:#075c2d;font-weight:900;font-size:15px}.grading,.remarks{margin-top:9px;border:1px solid #c4d0c9;padding:7px;font-size:9px}.sign{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:42px}.sign span{border-top:1px solid #5c6962;text-align:center;padding-top:6px;font-size:8px;font-weight:800}.page footer{position:absolute;bottom:7mm;left:10mm;right:10mm;border-top:1px solid #075c2d;padding-top:5px;text-align:center;color:#68766f;font-size:7px}@media print{body{background:#fff}.page{margin:0;border:0;width:190mm;min-height:279mm}}@media screen{body{padding:10px}}</style></head><body>${pages}<script>window.onload=()=>setTimeout(()=>window.print(),350);<\\/script></body></html>`);w.document.close();}
+export default function AdminResultsPage() {
+  const router = useRouter();
+  const [tab, setTab] = useState<"setup" | "marks">("setup");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [selectedExamId, setSelectedExamId] = useState("");
+  const [saved, setSaved] = useState<Record<string, SavedResult>>({});
+  const [values, setValues] = useState<Record<string, Record<string, string>>>({});
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [examForm, setExamForm] = useState({ exam_name: "", exam_date: new Date().toISOString().slice(0, 10), session: String(new Date().getFullYear()) });
+  const [subjects, setSubjects] = useState<SubjectDraft[]>([blankSubject(), blankSubject()]);
 
-export default function AdminResultsPage(){
- const router=useRouter();
- const [students,setStudents]=useState<Student[]>([]),[exams,setExams]=useState<Exam[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[q,setQ]=useState(""),[selected,setSelected]=useState<string[]>([]),[active,setActive]=useState<Student|null>(null),[error,setError]=useState(""),[notice,setNotice]=useState("");
- const [form,setForm]=useState({exam_name:"",exam_date:new Date().toISOString().slice(0,10),session:String(new Date().getFullYear()),remarks:""});const [rows,setRows]=useState<Row[]>([blank()]);
- const load=async()=>{setLoading(true);setError("");const {data:{user}}=await supabase.auth.getUser();if(!user){router.replace("/admin");return}const {data,error:e}=await supabase.from("admissions").select("id,student_name,student_id,course,father_name,guardian_name,student_photo_url").eq("status","approved").eq("account_status","approved").order("student_name");if(e){setError(e.message);setLoading(false);return}setStudents((data||[]) as Student[]);const ids=(data||[]).map((s:any)=>s.id);if(ids.length){const {data:ex,error:ee}=await supabase.from("student_exams").select("id,admission_id,exam_type,exam_name,exam_date,session,remarks,student_exam_marks(id,subject,max_marks,obtained_marks,grade,result_status,remarks)").in("admission_id",ids).order("created_at",{ascending:false});if(ee)setError(ee.message);else setExams((ex||[]) as Exam[])}else setExams([]);setLoading(false)};
- useEffect(()=>{load()},[]);
- const latest=useMemo(()=>{const m=new Map<string,Exam>();for(const e of exams)if(!m.has(e.admission_id))m.set(e.admission_id,e);return m},[exams]);
- const filtered=students.filter(s=>`${s.student_name} ${s.student_id||""} ${s.course||""}`.toLowerCase().includes(q.toLowerCase()));
- const toggle=(id:string)=>setSelected(x=>x.includes(id)?x.filter(v=>v!==id):[...x,id]);
- const allVisible=filtered.length>0&&filtered.every(s=>selected.includes(s.id));
- const toggleAll=()=>setSelected(allVisible?selected.filter(id=>!filtered.some(s=>s.id===id)):[...new Set([...selected,...filtered.map(s=>s.id)])]);
- const openCreate=(s:Student)=>{setActive(s);setForm({exam_name:"",exam_date:new Date().toISOString().slice(0,10),session:String(new Date().getFullYear()),remarks:""});setRows([blank()]);setError("");setNotice("")};
- const save=async()=>{if(!active)return;setSaving(true);setError("");const marks=rows.map(r=>({subject:r.subject.trim(),max_marks:Number(r.max_marks),obtained_marks:Number(r.obtained_marks||0),remarks:r.remarks.trim()})).filter(r=>r.subject&&r.max_marks>0);try{if(!form.exam_name.trim())throw new Error("Exam name is required.");if(!marks.length)throw new Error("At least one subject is required.");for(const m of marks)if(m.obtained_marks<0||m.obtained_marks>m.max_marks)throw new Error(`${m.subject}: obtained marks cannot exceed full marks.`);const {error:e}=await supabase.rpc("save_student_exam",{p_admission_id:active.id,p_exam_type:"annual",p_exam_name:form.exam_name.trim(),p_exam_date:form.exam_date||null,p_session:form.session||null,p_remarks:form.remarks.trim()||null,p_marks:marks});if(e)throw e;setNotice(`Result saved for ${active.student_name}.`);setActive(null);setRows([blank()]);await load()}catch(e:any){setError(e?.message||"Unable to save result.")}finally{setSaving(false)}};
- const selectedPairs=selected.map(id=>{const s=students.find(x=>x.id===id);const e=latest.get(id);return s&&e?{student:s,exam:e}:null}).filter(Boolean) as {student:Student;exam:Exam}[];
- return <main className="min-h-screen bg-slate-50"><header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur"><div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4"><div><p className="text-xs font-black uppercase tracking-[.2em] text-emerald-700">Academic Management</p><h1 className="text-2xl font-black text-slate-900">Student Results</h1><p className="text-sm text-slate-500">Create results without opening the student's full profile.</p></div><button onClick={()=>router.push("/admin/dashboard")} className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2 font-bold"><FiArrowLeft/> Dashboard</button></div></header><section className="mx-auto max-w-7xl px-4 py-7"><div className="rounded-3xl bg-gradient-to-r from-emerald-950 via-emerald-800 to-emerald-600 p-6 text-white shadow-xl"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-bold text-emerald-200">Approved & Active Students</p><h2 className="mt-1 text-3xl font-black">{students.length} Students</h2><p className="mt-2 max-w-2xl text-sm text-emerald-100">Select students for batch printing, or click <b>Create Result</b> to open only that student's result form.</p></div><div className="relative w-full sm:w-80"><FiSearch className="absolute left-3 top-3.5 text-slate-400"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search name, ID or course..." className="w-full rounded-xl border-0 py-3 pl-10 pr-4 text-slate-900 outline-none"/></div></div></div>{notice&&<div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-bold text-emerald-800">{notice}</div>}{error&&<div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 font-bold text-red-700">{error}</div>}<div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm"><label className="flex cursor-pointer items-center gap-3 font-black text-slate-800"><input type="checkbox" checked={allVisible} onChange={toggleAll} className="h-5 w-5 accent-emerald-700"/> Select all visible</label><div className="flex flex-wrap gap-2"><span className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600">{selected.length} selected</span><button disabled={!selectedPairs.length} onClick={()=>printResults(selectedPairs)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 font-black text-white disabled:cursor-not-allowed disabled:opacity-40"><FiPrinter/> Print Selected Results</button><button disabled={!selectedPairs.length} onClick={()=>printResults(selectedPairs,true)} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 font-black text-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"><FiDownload/> Download Selected PDF</button></div></div>{loading?<div className="py-20 text-center font-bold text-slate-500">Loading approved students...</div>:<div className="mt-5 overflow-hidden rounded-3xl border bg-white shadow-sm"><div className="hidden grid-cols-[55px_1.4fr_1fr_1fr_180px] border-b bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wider text-slate-500 md:grid"><span/> <span>Student</span><span>ID</span><span>Latest Result</span><span>Action</span></div>{filtered.map(s=>{const e=latest.get(s.id);return <div key={s.id} className="grid gap-3 border-b px-5 py-5 last:border-b-0 md:grid-cols-[55px_1.4fr_1fr_1fr_180px] md:items-center"><div><input type="checkbox" checked={selected.includes(s.id)} onChange={()=>toggle(s.id)} className="h-5 w-5 accent-emerald-700"/></div><div><p className="font-black text-slate-900">{s.student_name}</p><p className="mt-1 text-xs text-slate-500">{s.course||"Course not specified"}</p></div><div className="font-bold text-emerald-700">{s.student_id||"—"}</div><div>{e?<><p className="font-bold text-slate-800">{e.exam_name}</p><p className="text-xs text-slate-500">{niceDate(e.exam_date)} • {e.student_exam_marks.length} subjects</p></>:<span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">No result yet</span>}</div><div><button onClick={()=>openCreate(s)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 font-black text-white hover:bg-emerald-800"><FiPlus/> Create Result <FiChevronRight/></button></div></div>})}</div>}{!loading&&!filtered.length&&<div className="mt-6 rounded-2xl border bg-white p-10 text-center font-bold text-slate-500">No approved student found.</div>}</section>{active&&<div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-4"><div className="mx-auto my-6 max-w-5xl rounded-3xl bg-white shadow-2xl"><div className="sticky top-0 z-10 flex items-center justify-between rounded-t-3xl border-b bg-white px-6 py-5"><div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-700">Result Form</p><h2 className="text-2xl font-black text-slate-900">{active.student_name}</h2><p className="text-sm text-slate-500">{active.student_id||"—"} • {active.course||"Course not specified"}</p></div><button onClick={()=>setActive(null)} className="rounded-xl border p-3"><FiX/></button></div><div className="p-6"><div className="grid gap-4 rounded-2xl bg-emerald-50 p-5 md:grid-cols-3"><label className="md:col-span-2"><span className="mb-2 block text-xs font-black uppercase tracking-wider text-emerald-800">Exam Name *</span><input value={form.exam_name} onChange={e=>setForm({...form,exam_name:e.target.value})} placeholder="Enter exact examination name" className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-emerald-400"/></label><label><span className="mb-2 block text-xs font-black uppercase tracking-wider text-emerald-800">Exam Date *</span><input type="date" value={form.exam_date} onChange={e=>setForm({...form,exam_date:e.target.value})} className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 font-bold outline-none"/></label><label><span className="mb-2 block text-xs font-black uppercase tracking-wider text-emerald-800">Academic Session</span><input value={form.session} onChange={e=>setForm({...form,session:e.target.value})} className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 font-bold outline-none"/></label><label className="md:col-span-2"><span className="mb-2 block text-xs font-black uppercase tracking-wider text-emerald-800">Remarks</span><input value={form.remarks} onChange={e=>setForm({...form,remarks:e.target.value})} placeholder="Optional remarks" className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 font-bold outline-none"/></label></div><div className="mt-6 overflow-x-auto rounded-2xl border"><table className="w-full min-w-[760px] border-collapse"><thead className="bg-emerald-900 text-white"><tr><th className="p-3 text-left text-sm">Subject</th><th className="p-3 text-center text-sm">Full Marks</th><th className="p-3 text-center text-sm">Obtained Marks</th><th className="p-3 text-left text-sm">Remarks</th><th className="p-3"/></tr></thead><tbody>{rows.map((r,i)=><tr key={i} className="border-t"><td className="p-2"><input value={r.subject} onChange={e=>setRows(x=>x.map((v,j)=>j===i?{...v,subject:e.target.value}:v))} placeholder="Subject name" className="w-full rounded-lg border px-3 py-2 font-semibold"/></td><td className="p-2"><input type="number" min="1" value={r.max_marks} onChange={e=>setRows(x=>x.map((v,j)=>j===i?{...v,max_marks:e.target.value}:v))} className="w-28 rounded-lg border px-3 py-2 text-center font-semibold"/></td><td className="p-2"><input type="number" min="0" value={r.obtained_marks} onChange={e=>setRows(x=>x.map((v,j)=>j===i?{...v,obtained_marks:e.target.value}:v))} className="w-32 rounded-lg border px-3 py-2 text-center font-semibold"/></td><td className="p-2"><input value={r.remarks} onChange={e=>setRows(x=>x.map((v,j)=>j===i?{...v,remarks:e.target.value}:v))} placeholder="Optional" className="w-full rounded-lg border px-3 py-2"/></td><td className="p-2 text-center"><button disabled={rows.length===1} onClick={()=>setRows(x=>x.filter((_,j)=>j!==i))} className="rounded-lg p-2 text-red-600 disabled:opacity-30"><FiTrash2/></button></td></tr>)}</tbody></table></div><button onClick={()=>setRows(x=>[...x,blank()])} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 font-black text-emerald-800"><FiPlus/> Add Subject</button><div className="mt-7 flex flex-wrap justify-end gap-3 border-t pt-5"><button onClick={()=>setActive(null)} className="rounded-xl border bg-white px-5 py-3 font-black">Cancel</button><button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 font-black text-white disabled:opacity-50"><FiSave/> {saving?"Saving...":"Save Complete Result"}</button></div></div></div></div>}</main>;
+  const loadBase = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    const { data: studentRows, error: studentError } = await supabase
+      .from("admissions")
+      .select("id,student_name,student_id,course,father_name,guardian_name,date_of_birth,application_number,message")
+      .eq("status", "approved")
+      .eq("account_status", "approved")
+      .order("student_name");
+    if (studentError) { setError(studentError.message); setLoading(false); return; }
+    const { data: examRows, error: examError } = await supabase
+      .from("exams")
+      .select("id,exam_name,exam_date,session,active,exam_subjects(id,subject,full_marks,passing_marks,sort_order)")
+      .order("created_at", { ascending: false });
+    if (examError) { setError(examError.message); setLoading(false); return; }
+    setStudents((studentRows || []) as Student[]);
+    const normalized = (examRows || []).map((e: any) => ({
+      ...e,
+      exam_subjects: [...(e.exam_subjects || [])].sort((a: Subject, b: Subject) => a.sort_order - b.sort_order),
+    })) as Exam[];
+    setExams(normalized);
+    if (!selectedExamId && normalized.length) setSelectedExamId(normalized.find(e => e.active)?.id || normalized[0].id);
+    setLoading(false);
+  }, [selectedExamId]);
+
+  useEffect(() => { void loadBase(); }, [loadBase]);
+
+  const selectedExam = useMemo(() => exams.find(e => e.id === selectedExamId) || null, [exams, selectedExamId]);
+  const filteredStudents = useMemo(() => students.filter(s =>
+    (s.student_name + " " + (s.student_id || "") + " " + (s.course || "")).toLowerCase().includes(search.toLowerCase())
+  ), [students, search]);
+
+  const loadExamResults = useCallback(async (examId: string, exam: Exam, studentRows: Student[]) => {
+    const { data, error: queryError } = await supabase
+      .from("student_exams")
+      .select("id,admission_id,remarks,student_exam_marks(id,subject,max_marks,obtained_marks,grade,result_status,remarks)")
+      .eq("master_exam_id", examId);
+    if (queryError) { setError(queryError.message); return; }
+    const resultMap: Record<string, SavedResult> = {};
+    const valueMap: Record<string, Record<string, string>> = {};
+    for (const row of (data || []) as unknown as SavedResult[]) {
+      resultMap[row.admission_id] = row;
+      const bySubject: Record<string, string> = {};
+      for (const subject of exam.exam_subjects) {
+        const existing = row.student_exam_marks.find(m => m.subject.trim().toLowerCase() === subject.subject.trim().toLowerCase());
+        if (existing) bySubject[subject.id] = String(existing.obtained_marks);
+      }
+      valueMap[row.admission_id] = bySubject;
+    }
+    for (const student of studentRows) if (!valueMap[student.id]) valueMap[student.id] = {};
+    setSaved(resultMap);
+    setValues(valueMap);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedExamId || !selectedExam || !students.length) return;
+    let cancelled = false;
+    (async () => {
+      setError("");
+      await loadExamResults(selectedExamId, selectedExam, students);
+      if (cancelled) return;
+      setSelectedStudents([]);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedExamId, selectedExam, students, loadExamResults]);
+
+  const updateMark = (admissionId: string, subjectId: string, value: string) => {
+    setValues(prev => ({ ...prev, [admissionId]: { ...(prev[admissionId] || {}), [subjectId]: value } }));
+  };
+
+  const createExam = async () => {
+    setCreating(true); setError(""); setNotice("");
+    try {
+      const clean = subjects.map(s => ({
+        subject: s.subject.trim(),
+        full_marks: Number(s.full_marks),
+        passing_marks: Number(s.passing_marks),
+      }));
+      if (!examForm.exam_name.trim()) throw new Error("Exam name is required.");
+      if (!clean.length || clean.some(s => !s.subject)) throw new Error("Please enter every subject name.");
+      if (clean.some(s => !Number.isFinite(s.full_marks) || s.full_marks <= 0 || !Number.isFinite(s.passing_marks) || s.passing_marks < 0 || s.passing_marks > s.full_marks)) throw new Error("Check full marks and passing marks for every subject.");
+      if (new Set(clean.map(s => s.subject.toLowerCase())).size !== clean.length) throw new Error("Duplicate subject names are not allowed.");
+      const { data, error: rpcError } = await supabase.rpc("create_exam_setup", {
+        p_exam_name: examForm.exam_name.trim(),
+        p_exam_date: examForm.exam_date || null,
+        p_session: examForm.session.trim() || null,
+        p_subjects: clean,
+      });
+      if (rpcError) throw rpcError;
+      setNotice("Exam setup saved. Ab is exam ke liye sabhi students ke obtained marks enter kar sakte hain.");
+      await loadBase();
+      setSelectedExamId(String(data));
+      setTab("marks");
+      setSearch("");
+      setExamForm({ exam_name: "", exam_date: new Date().toISOString().slice(0, 10), session: String(new Date().getFullYear()) });
+      setSubjects([blankSubject(), blankSubject()]);
+    } catch (e: any) {
+      setError(e?.message || "Exam setup save nahi ho saka.");
+    } finally { setCreating(false); }
+  };
+
+  const saveResults = async () => {
+    if (!selectedExam) return;
+    setSaving(true); setError(""); setNotice("");
+    try {
+      if (!students.length) throw new Error("No approved students found.");
+      if (!selectedExam.exam_subjects.length) throw new Error("Selected exam has no subjects.");
+      const results = students.map(student => ({
+        admission_id: student.id,
+        marks: selectedExam.exam_subjects.map(subject => {
+          const raw = values[student.id]?.[subject.id] ?? "";
+          if (raw.trim() === "") throw new Error("Obtained marks missing: " + student.student_name + " — " + subject.subject);
+          const obtained = Number(raw);
+          if (!Number.isFinite(obtained) || obtained < 0 || obtained > Number(subject.full_marks)) throw new Error(student.student_name + " — " + subject.subject + ": marks 0 se " + subject.full_marks + " ke beech hone chahiye.");
+          return { subject_id: subject.id, obtained_marks: obtained };
+        }),
+      }));
+      const { data, error: rpcError } = await supabase.rpc("save_exam_results", {
+        p_master_exam_id: selectedExam.id,
+        p_results: results,
+      });
+      if (rpcError) throw rpcError;
+      await loadExamResults(selectedExam.id, selectedExam, students);
+      setNotice("Result successfully saved for " + Number(data || students.length) + " students.");
+    } catch (e: any) {
+      setError(e?.message || "Results save nahi ho sake.");
+    } finally { setSaving(false); }
+  };
+
+  const selectedResultPairs = selectedStudents.map(id => {
+    const student = students.find(s => s.id === id);
+    const result = saved[id];
+    if (!student || !result || !selectedExam) return null;
+    return { student, result };
+  }).filter(Boolean) as { student: Student; result: SavedResult }[];
+
+  const printSelected = async (download = false) => {
+    if (!selectedExam || !selectedResultPairs.length) return;
+    const html = selectedResultPairs.map(({ student, result }) => marksheetPrintHtml(
+      student,
+      { exam_name: selectedExam.exam_name, exam_date: selectedExam.exam_date, session: selectedExam.session, student_exam_marks: result.student_exam_marks },
+    )).join("");
+    const name = (selectedExam.exam_name.replace(/[^a-z0-9]+/gi, "_") || "Exam") + "_Marksheets";
+    if (download) {
+      try { await downloadMarksheetPdf(html, name + ".pdf"); }
+      catch (e: any) { setError(e?.message || "PDF download failed."); }
+    } else openMarksheetPrint(html, name);
+  };
+
+  const allFilteredSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.includes(s.id));
+  const toggleAllFiltered = () => setSelectedStudents(allFilteredSelected
+    ? selectedStudents.filter(id => !filteredStudents.some(s => s.id === id))
+    : [...new Set([...selectedStudents, ...filteredStudents.map(s => s.id)])]);
+  const enteredCount = selectedExam ? students.reduce((total, student) =>
+    total + selectedExam.exam_subjects.filter(subject => (values[student.id]?.[subject.id] ?? "").trim() !== "").length, 0
+  ) : 0;
+  const totalInputs = students.length * (selectedExam?.exam_subjects.length || 0);
+
+  const toggleExamActive = async (exam: Exam) => {
+    const { error: updateError } = await supabase.from("exams").update({ active: !exam.active, updated_at: new Date().toISOString() }).eq("id", exam.id);
+    if (updateError) setError(updateError.message);
+    else { setExams(prev => prev.map(e => e.id === exam.id ? { ...e, active: !exam.active } : e)); setNotice(exam.active ? "Exam archived. Saved results remain safe." : "Exam activated."); }
+  };
+
+  return (
+    <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <section className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#052f22] via-[#087345] to-[#14a66a] p-6 text-white shadow-2xl sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-emerald-200">Academic Management</p><h1 className="mt-2 text-3xl font-black sm:text-4xl">Exams & Results</h1><p className="mt-2 max-w-2xl text-sm text-emerald-50">Pehle exam aur subjects set karein. Phir exam select karke sabhi students ke obtained marks ek hi jagah enter karein.</p></div>
+          <button onClick={() => router.push("/admin/dashboard")} className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-black text-white hover:bg-white/20"><FiArrowLeft/> Dashboard</button>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button onClick={() => setTab("setup")} className={"rounded-xl px-5 py-3 text-sm font-black transition " + (tab === "setup" ? "bg-white text-emerald-900 shadow-lg" : "bg-white/10 text-white hover:bg-white/20")}>01 • Exam Setup</button>
+          <button onClick={() => setTab("marks")} className={"rounded-xl px-5 py-3 text-sm font-black transition " + (tab === "marks" ? "bg-white text-emerald-900 shadow-lg" : "bg-white/10 text-white hover:bg-white/20")}>02 • Enter Results</button>
+        </div>
+      </section>
+
+      {notice && <div className="mt-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800"><FiCheck className="mt-0.5 shrink-0"/>{notice}</div>}
+      {error && <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"><FiX className="mt-0.5 shrink-0"/>{error}</div>}
+
+      {tab === "setup" && <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1.1fr_.9fr]">
+        <section className="admin-glass rounded-3xl p-5 sm:p-7">
+          <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Step 1</p><h2 className="mt-1 text-2xl font-black text-slate-900">Create New Examination</h2><p className="mt-1 text-sm text-slate-500">Exam name, date, subjects, full marks aur passing marks ek baar yahan set honge.</p></div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-black text-slate-700">Exam Name *</span><input value={examForm.exam_name} onChange={e => setExamForm({ ...examForm, exam_name: e.target.value })} placeholder="e.g. Half Yearly Examination 2026" className="w-full rounded-xl border border-emerald-100 bg-white/90 px-4 py-3 font-semibold outline-none focus:border-emerald-500"/></label>
+            <label><span className="mb-1.5 block text-xs font-black text-slate-700">Exam Date</span><input type="date" value={examForm.exam_date} onChange={e => setExamForm({ ...examForm, exam_date: e.target.value })} className="w-full rounded-xl border border-emerald-100 bg-white/90 px-4 py-3 font-semibold outline-none"/></label>
+            <label><span className="mb-1.5 block text-xs font-black text-slate-700">Academic Session</span><input value={examForm.session} onChange={e => setExamForm({ ...examForm, session: e.target.value })} className="w-full rounded-xl border border-emerald-100 bg-white/90 px-4 py-3 font-semibold outline-none"/></label>
+          </div>
+          <div className="mt-7 flex items-center justify-between gap-3"><div><h3 className="font-black text-slate-900">Subjects & Marks Criteria</h3><p className="text-xs text-slate-500">Passing marks har subject ke liye separately save honge.</p></div><button onClick={() => setSubjects(prev => [...prev, blankSubject()])} className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800"><FiPlus/> Add Subject</button></div>
+          <div className="mt-3 space-y-3">{subjects.map((subject, index) => <div key={index} className="grid gap-2 rounded-2xl border border-emerald-100 bg-white/75 p-3 sm:grid-cols-[1fr_125px_125px_38px] sm:items-end">
+            <label><span className="mb-1 block text-[10px] font-black uppercase text-slate-500">Subject {index + 1}</span><input value={subject.subject} onChange={e => setSubjects(prev => prev.map((x, i) => i === index ? { ...x, subject: e.target.value } : x))} placeholder="Subject name" className="w-full rounded-lg border px-3 py-2.5 text-sm font-semibold outline-none focus:border-emerald-500"/></label>
+            <label><span className="mb-1 block text-[10px] font-black uppercase text-slate-500">Full Marks</span><input type="number" min="1" value={subject.full_marks} onChange={e => setSubjects(prev => prev.map((x, i) => i === index ? { ...x, full_marks: e.target.value } : x))} className="w-full rounded-lg border px-3 py-2.5 text-sm font-semibold"/></label>
+            <label><span className="mb-1 block text-[10px] font-black uppercase text-slate-500">Passing Marks</span><input type="number" min="0" value={subject.passing_marks} onChange={e => setSubjects(prev => prev.map((x, i) => i === index ? { ...x, passing_marks: e.target.value } : x))} className="w-full rounded-lg border px-3 py-2.5 text-sm font-semibold"/></label>
+            <button disabled={subjects.length === 1} onClick={() => setSubjects(prev => prev.filter((_, i) => i !== index))} className="flex h-10 w-10 items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-30" aria-label="Remove subject"><FiTrash2/></button>
+          </div>)}</div>
+          <button onClick={createExam} disabled={creating} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-5 py-3.5 font-black text-white shadow-lg disabled:opacity-50"><FiSave/>{creating ? "Creating Exam..." : "Create Examination"}</button>
+        </section>
+        <section className="admin-glass rounded-3xl p-5 sm:p-7">
+          <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Saved Exams</p><h2 className="mt-1 text-2xl font-black text-slate-900">Examination List</h2><p className="mt-1 text-sm text-slate-500">Archived exams and their saved results remain preserved.</p></div>
+          {loading ? <p className="py-10 text-center text-sm font-bold text-slate-500">Loading exams...</p> : exams.length ? <div className="mt-5 space-y-3">{exams.map(exam => <div key={exam.id} className="rounded-2xl border border-emerald-100 bg-white/80 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-black text-slate-900">{exam.exam_name}</h3><p className="mt-1 text-xs text-slate-500">{fmtDate(exam.exam_date)} • {exam.session || "No session"} • {exam.exam_subjects.length} subjects</p><p className="mt-2 text-xs text-slate-600">{exam.exam_subjects.map(s => s.subject).join(" • ")}</p></div><span className={"rounded-full px-3 py-1 text-[10px] font-black " + (exam.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500")}>{exam.active ? "ACTIVE" : "ARCHIVED"}</span></div>
+            <div className="mt-3 flex flex-wrap gap-2"><button onClick={() => { setSelectedExamId(exam.id); setTab("marks"); setSearch(""); }} disabled={!exam.active} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white disabled:opacity-40">Enter / Edit Results</button><button onClick={() => toggleExamActive(exam)} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black text-slate-700">{exam.active ? <FiToggleRight className="text-emerald-700"/> : <FiToggleLeft/>}{exam.active ? "Archive" : "Activate"}</button></div>
+          </div>)}</div> : <div className="mt-5 rounded-2xl bg-white/70 p-8 text-center"><p className="text-3xl">📝</p><p className="mt-2 font-black text-slate-800">No exam created yet</p><p className="mt-1 text-xs text-slate-500">Create your first examination using the form.</p></div>}
+        </section>
+      </div>}
+
+      {tab === "marks" && <section className="mt-6 space-y-5">
+        <div className="admin-glass rounded-3xl p-5 sm:p-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Step 2</p><h2 className="mt-1 text-2xl font-black text-slate-900">Enter Obtained Marks</h2><p className="mt-1 text-sm text-slate-500">Passing marks are applied automatically; yahan sirf obtained marks bharne hain.</p></div>
+            <label className="w-full sm:w-[420px]"><span className="mb-1.5 block text-xs font-black text-slate-700">Select Examination *</span><div className="relative"><select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full appearance-none rounded-xl border border-emerald-100 bg-white px-4 py-3 pr-10 font-bold text-slate-900 outline-none focus:border-emerald-500"><option value="">Choose exam...</option>{exams.filter(e => e.active).map(e => <option key={e.id} value={e.id}>{e.exam_name} • {fmtDate(e.exam_date)} • {e.session || ""}</option>)}</select><FiChevronDown className="pointer-events-none absolute right-4 top-4 text-slate-500"/></div></label>
+          </div>
+          {selectedExam && <div className="mt-5 flex flex-wrap items-center gap-2">{selectedExam.exam_subjects.map(s => <span key={s.id} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-900">{s.subject} <span className="text-emerald-700/70">(out of {s.full_marks})</span></span>)}</div>}
+        </div>
+        {selectedExam && <>
+          <div className="grid gap-4 sm:grid-cols-3"><div className="admin-glass rounded-2xl p-4"><p className="text-xs font-bold text-slate-500">Students</p><p className="mt-1 text-2xl font-black text-slate-900">{students.length}</p></div><div className="admin-glass rounded-2xl p-4"><p className="text-xs font-bold text-slate-500">Marks Entered</p><p className="mt-1 text-2xl font-black text-emerald-700">{enteredCount} / {totalInputs}</p></div><div className="admin-glass rounded-2xl p-4"><p className="text-xs font-bold text-slate-500">Results Already Saved</p><p className="mt-1 text-2xl font-black text-indigo-700">{Object.keys(saved).length}</p></div></div>
+          <div className="admin-glass overflow-hidden rounded-3xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100/70 p-4 sm:p-5"><div><h3 className="font-black text-slate-900">All Approved Students</h3><p className="mt-1 text-xs text-slate-500">Har student ke saamne har subject ka obtained marks enter karein. Existing saved marks edit ho sakte hain.</p></div><div className="relative w-full sm:w-72"><FiSearch className="absolute left-3 top-3 text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search student..." className="w-full rounded-xl border bg-white py-2.5 pl-9 pr-3 text-sm"/></div></div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[1050px] border-collapse text-sm"><thead className="bg-emerald-950 text-white"><tr><th className="sticky left-0 bg-emerald-950 p-3 text-left">Student</th><th className="p-3 text-left">Student ID</th>{selectedExam.exam_subjects.map(s => <th key={s.id} className="min-w-[145px] p-3 text-center">{s.subject}<br/><span className="text-[10px] font-normal text-emerald-200">Full: {s.full_marks}</span></th>)}<th className="p-3">Status</th></tr></thead><tbody>{filteredStudents.map((student, index) => {const marks = values[student.id] || {};const complete = selectedExam.exam_subjects.every(s => (marks[s.id] ?? "").trim() !== "");return <tr key={student.id} className="border-t border-emerald-100/70 odd:bg-white/60 even:bg-emerald-50/50"><td className="sticky left-0 bg-inherit p-3"><p className="font-black text-slate-900">{student.student_name}</p><p className="mt-0.5 text-[10px] text-slate-500">{student.course || "Course not specified"}</p></td><td className="p-3 font-bold text-emerald-800">{student.student_id || "—"}</td>{selectedExam.exam_subjects.map(subject => <td key={subject.id} className="p-2"><input type="number" min="0" max={subject.full_marks} step="0.01" inputMode="decimal" value={marks[subject.id] ?? ""} onChange={e => updateMark(student.id, subject.id, e.target.value)} placeholder="Obtained" className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2.5 text-center font-bold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"/></td>)}<td className="p-3 text-center"><span className={"rounded-full px-2.5 py-1 text-[10px] font-black " + (complete ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800")}>{complete ? (saved[student.id] ? "SAVED / READY" : "READY") : "PENDING"}</span></td></tr>})}</tbody></table></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-100/70 bg-white/70 p-4 sm:p-5"><p className="text-xs font-semibold text-slate-500">All students and all subjects are required before saving. If absent from an exam, enter 0.</p><button onClick={saveResults} disabled={saving || !students.length || enteredCount !== totalInputs} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-6 py-3 font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40"><FiSave/>{saving ? "Saving Results..." : "Save All Students' Results"}</button></div>
+          </div>
+          <div className="admin-glass flex flex-wrap items-center justify-between gap-3 rounded-3xl p-5"><div><h3 className="font-black text-slate-900">Generate Marksheets</h3><p className="mt-1 text-xs text-slate-500">Select students whose marksheets should be printed or downloaded.</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setSelectedStudents(selectedStudents.length === students.length ? [] : students.map(s => s.id))} className="rounded-xl border bg-white px-3 py-2 text-xs font-black">{selectedStudents.length === students.length ? "Unselect All" : "Select All"}</button><button disabled={!selectedResultPairs.length} onClick={() => void printSelected(false)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-40"><FiPrinter/> Print Marksheets</button><button disabled={!selectedResultPairs.length} onClick={() => void printSelected(true)} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white disabled:opacity-40"><FiDownload/> Download PDF</button><button disabled={!saved || Object.keys(saved).length === 0} onClick={() => router.push("/admin/results/notice-board")} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-black text-emerald-800 disabled:opacity-40">Result Notice Board</button></div></div>
+          <div className="admin-glass rounded-2xl p-4 text-xs text-slate-600"><b>Note:</b> Passing marks are not shown in the marks-entry table. System applies each subject's pre-set passing marks automatically and calculates Pass/Fail, grade and percentage for the marksheet.</div>
+        </>}
+        {!selectedExam && <div className="admin-glass rounded-3xl p-12 text-center"><p className="text-4xl">📝</p><h3 className="mt-3 text-xl font-black text-slate-900">Select an examination</h3><p className="mt-2 text-sm text-slate-500">Exam Setup tab mein exam create karein, phir yahan select karke obtained marks enter karein.</p><button onClick={() => setTab("setup")} className="mt-5 rounded-xl bg-emerald-700 px-5 py-3 font-black text-white">Go to Exam Setup</button></div>}
+      </section>}
+
+      <div className="mt-7 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500"><span>Existing old marksheets and saved results are preserved.</span><button onClick={() => void loadBase()} className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-4 py-2 font-bold text-emerald-800">Refresh Exams & Students</button></div>
+    </main>
+  );
 }
