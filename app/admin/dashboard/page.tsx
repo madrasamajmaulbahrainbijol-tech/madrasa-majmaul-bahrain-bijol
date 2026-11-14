@@ -8,7 +8,7 @@ type Notice = { id: string; title: string; notice_date: string | null; important
 type Stats = {
   email: string; students: number; pendingAdmissions: number; reviewedAdmissions: number;
   enquiries: number; teachers: number; staff: number; courses: number; toppers: number;
-  notices: Notice[]; due: number; paid: number; studentsWithDue: number;
+  notices: Notice[]; due: number; paid: number; monthCollection: number; studentsWithDue: number;
   present: number; absent: number; other: number; attendanceMarked: number;
 };
 
@@ -169,7 +169,7 @@ export default function AdminDashboardPage() {
       <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric icon="♙" label="Active Students" value={stats.students.toLocaleString("en-IN")} hint="Approved student accounts" color="bg-violet-100 text-violet-700" onClick={() => router.push("/admin/students")} />
         <Metric icon="₹" label="Outstanding Fees" value={money(stats.due)} hint={stats.studentsWithDue + " students with pending balance"} color="bg-amber-100 text-amber-700" onClick={() => router.push("/admin/fee-account")} />
-        <Metric icon="♧" label="Active Staff" value={(stats.staff + stats.teachers).toLocaleString("en-IN")} hint={stats.teachers + " teacher profiles · " + stats.staff + " staff records"} color="bg-sky-100 text-sky-700" onClick={() => router.push("/admin/teachers")} />
+        <Metric icon="♧" label="Active Staff" value={stats.staff.toLocaleString("en-IN")} hint={stats.teachers + " active teacher profiles"} color="bg-sky-100 text-sky-700" onClick={() => router.push("/admin/teachers")} />
         <Metric icon="◷" label="Today's Attendance" value={stats.attendanceMarked.toLocaleString("en-IN")} hint={attendanceRate + "% present among marked records"} color="bg-emerald-100 text-emerald-700" onClick={() => router.push("/admin/students")} />
       </section>
 
@@ -196,11 +196,11 @@ export default function AdminDashboardPage() {
               {label:"New admissions",value:stats.pendingAdmissions,icon:"🎓",href:"/admin/admissions",note:"Awaiting review"},
               {label:"Reviewed / rejected",value:stats.reviewedAdmissions,icon:"🗂️",href:"/admin/students",note:"Application records"},
               {label:"New enquiries",value:stats.enquiries,icon:"✉️",href:"/admin/enquiries",note:"Need follow-up"},
-              {label:"This month's fee collection",value:money(monthCollection),icon:"💳",href:"/admin/fee-account",note:"Recorded payments"},
+              {label:"This month's fee collection",value:money(stats.monthCollection),icon:"💳",href:"/admin/fee-account",note:"Recorded payments"},
             ].map((x)=><button key={x.label} onClick={()=>router.push(x.href)} className="flex items-center gap-3 rounded-2xl border border-white bg-white/70 p-4 text-left transition hover:border-emerald-200 hover:bg-white hover:shadow-lg"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-xl">{x.icon}</span><span className="min-w-0 flex-1"><span className="block text-xs font-bold text-slate-500">{x.label}</span><span className="mt-1 block text-xl font-black text-slate-900">{x.value}</span><span className="mt-0.5 block text-[10px] text-slate-400">{x.note}</span></span><span className="text-slate-300">↗</span></button>)}
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {[{label:"Active courses",value:stats.courses,href:"/admin/courses"},{label:"Toppers",value:stats.toppers,href:"/admin/toppers"},{label:"Published notices",value:stats.notices.length,href:"/admin/notices"}].map(x=><button key={x.label} onClick={()=>router.push(x.href)} className="rounded-xl border border-emerald-100/80 bg-emerald-50/60 p-3 text-left hover:bg-emerald-50"><span className="block text-xs font-semibold text-emerald-800">{x.label}</span><span className="mt-1 block text-2xl font-black text-emerald-950">{x.value}</span></button>)}
+            {[{label:"Active courses",value:stats.courses,href:"/admin/courses"},{label:"Toppers",value:stats.toppers,href:"/admin/toppers"},{label:"Recent notices",value:stats.notices.length,href:"/admin/notices"}].map(x=><button key={x.label} onClick={()=>router.push(x.href)} className="rounded-xl border border-emerald-100/80 bg-emerald-50/60 p-3 text-left hover:bg-emerald-50"><span className="block text-xs font-semibold text-emerald-800">{x.label}</span><span className="mt-1 block text-2xl font-black text-emerald-950">{x.value}</span></button>)}
           </div>
         </div>
 
