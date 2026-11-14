@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#064e3b"/>
+  <circle cx="256" cy="256" r="205" fill="none" stroke="#e2b94e" stroke-width="12"/>
+  <path d="M132 285V205c0-77 49-123 124-153 75 30 124 76 124 153v80" fill="none" stroke="#f6e6b6" stroke-width="18" stroke-linecap="round"/>
+  <path d="M145 295c38-30 75-38 111-18v82c-36-20-73-12-111 18zM367 295c-38-30-75-38-111-18v82c36-20 73-12 111 18z" fill="#fff" stroke="#e2b94e" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M256 277v82" stroke="#e2b94e" stroke-width="8"/>
+  <text x="256" y="425" text-anchor="middle" font-family="Georgia,serif" font-size="45" font-weight="bold" fill="#fff">MMBB</text>
+</svg>
