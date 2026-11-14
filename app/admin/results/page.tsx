@@ -12,9 +12,9 @@ type Student = {
   application_number?: string | null; message?: string | null;
 };
 type Subject = { id: string; subject: string; full_marks: number; passing_marks: number; sort_order: number };
-type Exam = { id: string; exam_name: string; exam_date: string | null; session: string | null; active: boolean; exam_subjects: Subject[] };
-type Mark = { id: string; subject: string; max_marks: number; obtained_marks: number; grade: string | null; result_status: "Pass" | "Fail"; remarks: string | null };
-type SavedResult = { id: string; admission_id: string; remarks: string | null; student_exam_marks: Mark[] };
+type Exam = { id: string; exam_name: string; exam_date: string | null; session: string | null; active: boolean; exam_subjects: Subject[]; student_exams?: { id: string }[] };
+type Mark = { id: string; subject: string; max_marks: number; obtained_marks: number | null; grade: string | null; result_status: "Pass" | "Fail" | "Absent"; attendance_status?: "Present" | "Absent"; remarks: string | null };
+type SavedResult = { id: string; admission_id: string; remarks: string | null; result_status?: "Pending" | "Pass" | "Fail" | "Incomplete"; student_exam_marks: Mark[] };
 type SubjectDraft = { subject: string; full_marks: string; passing_marks: string };
 
 const blankSubject = (): SubjectDraft => ({ subject: "", full_marks: "100", passing_marks: "40" });
@@ -28,6 +28,7 @@ export default function AdminResultsPage() {
   const [selectedExamId, setSelectedExamId] = useState("");
   const [saved, setSaved] = useState<Record<string, SavedResult>>({});
   const [values, setValues] = useState<Record<string, Record<string, string>>>({});
+  const [attendanceStatus, setAttendanceStatus] = useState<Record<string, Record<string, "Present" | "Absent">>>({});
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -50,7 +51,7 @@ export default function AdminResultsPage() {
     if (studentError) { setError(studentError.message); setLoading(false); return; }
     const { data: examRows, error: examError } = await supabase
       .from("exams")
-      .select("id,exam_name,exam_date,session,active,exam_subjects(id,subject,full_marks,passing_marks,sort_order)")
+      .select("id,exam_name,exam_date,session,active,exam_subjects(id,subject,full_marks,passing_marks,sort_order),student_exams(id)")
       .order("created_at", { ascending: false });
     if (examError) { setError(examError.message); setLoading(false); return; }
     const rawStudents = (studentRows || []) as Student[];
@@ -86,18 +87,28 @@ export default function AdminResultsPage() {
     if (queryError) { setError(queryError.message); return; }
     const resultMap: Record<string, SavedResult> = {};
     const valueMap: Record<string, Record<string, string>> = {};
+    const attendanceMap: Record<string, Record<string, "Present" | "Absent">> = {};
     for (const row of (data || []) as unknown as SavedResult[]) {
       resultMap[row.admission_id] = row;
       const bySubject: Record<string, string> = {};
+      const byAttendance: Record<string, "Present" | "Absent"> = {};
       for (const subject of exam.exam_subjects) {
         const existing = row.student_exam_marks.find(m => m.subject.trim().toLowerCase() === subject.subject.trim().toLowerCase());
-        if (existing) bySubject[subject.id] = String(existing.obtained_marks);
+        if (existing) {
+          byAttendance[subject.id] = existing.attendance_status === "Absent" || existing.result_status === "Absent" ? "Absent" : "Present";
+          if (existing.obtained_marks !== null && existing.obtained_marks !== undefined) bySubject[subject.id] = String(existing.obtained_marks);
+        }
       }
       valueMap[row.admission_id] = bySubject;
+      attendanceMap[row.admission_id] = byAttendance;
     }
-    for (const student of studentRows) if (!valueMap[student.id]) valueMap[student.id] = {};
+    for (const student of studentRows) {
+      if (!valueMap[student.id]) valueMap[student.id] = {};
+      if (!attendanceMap[student.id]) attendanceMap[student.id] = {};
+    }
     setSaved(resultMap);
     setValues(valueMap);
+    setAttendanceStatus(attendanceMap);
   }, []);
 
   useEffect(() => {
@@ -156,11 +167,13 @@ export default function AdminResultsPage() {
       const results = students.map(student => ({
         admission_id: student.id,
         marks: selectedExam.exam_subjects.map(subject => {
+          const attendance = attendanceStatus[student.id]?.[subject.id] || "Present";
+          if (attendance === "Absent") return { subject_id: subject.id, attendance_status: "Absent" };
           const raw = values[student.id]?.[subject.id] ?? "";
           if (raw.trim() === "") throw new Error("Obtained marks missing: " + student.student_name + " — " + subject.subject);
           const obtained = Number(raw);
           if (!Number.isFinite(obtained) || obtained < 0 || obtained > Number(subject.full_marks)) throw new Error(student.student_name + " — " + subject.subject + ": marks 0 se " + subject.full_marks + " ke beech hone chahiye.");
-          return { subject_id: subject.id, obtained_marks: obtained };
+          return { subject_id: subject.id, attendance_status: "Present", obtained_marks: obtained };
         }),
       }));
       const { data, error: rpcError } = await supabase.rpc("save_exam_results", {
@@ -201,9 +214,23 @@ export default function AdminResultsPage() {
     ? selectedStudents.filter(id => !filteredStudents.some(s => s.id === id))
     : [...new Set([...selectedStudents, ...filteredStudents.map(s => s.id)])]);
   const enteredCount = selectedExam ? students.reduce((total, student) =>
-    total + selectedExam.exam_subjects.filter(subject => (values[student.id]?.[subject.id] ?? "").trim() !== "").length, 0
+    total + selectedExam.exam_subjects.filter(subject => (attendanceStatus[student.id]?.[subject.id] || "Present") === "Absent" || (values[student.id]?.[subject.id] ?? "").trim() !== "").length, 0
   ) : 0;
   const totalInputs = students.length * (selectedExam?.exam_subjects.length || 0);
+
+  const deleteExam = async (exam: Exam) => {
+    const resultCount = exam.student_exams?.length || 0;
+    const confirmed = window.confirm("Delete " + exam.exam_name + " permanently? This will also delete " + resultCount + " linked student result(s), their subject marks and this exam’s subject setup. Other exams and old unlinked results will remain safe.");
+    if (!confirmed) return;
+    setError(""); setNotice("");
+    const { error: deleteError } = await supabase.from("exams").delete().eq("id", exam.id);
+    if (deleteError) { setError(deleteError.message); return; }
+    if (selectedExamId === exam.id) {
+      setSelectedExamId(""); setSaved({}); setValues({}); setAttendanceStatus({}); setSelectedStudents([]);
+    }
+    setExams(prev => prev.filter(item => item.id !== exam.id));
+    setNotice("Exam deleted with " + resultCount + " linked student result(s). Unrelated and old unlinked results were preserved.");
+  };
 
   const toggleExamActive = async (exam: Exam) => {
     const { error: updateError } = await supabase.from("exams").update({ active: !exam.active, updated_at: new Date().toISOString() }).eq("id", exam.id);
@@ -245,10 +272,10 @@ export default function AdminResultsPage() {
           <button onClick={createExam} disabled={creating} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-5 py-3.5 font-black text-white shadow-lg disabled:opacity-50"><FiSave/>{creating ? "Creating Exam..." : "Create Examination"}</button>
         </section>
         <section className="admin-glass rounded-3xl p-5 sm:p-7">
-          <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Saved Exams</p><h2 className="mt-1 text-2xl font-black text-slate-900">Examination List</h2><p className="mt-1 text-sm text-slate-500">Archived exams and their saved results remain preserved.</p></div>
+          <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Saved Exams</p><h2 className="mt-1 text-2xl font-black text-slate-900">Examination List</h2><p className="mt-1 text-sm text-slate-500">Archive keeps results. Delete permanently removes only this exam and its linked results.</p></div>
           {loading ? <p className="py-10 text-center text-sm font-bold text-slate-500">Loading exams...</p> : exams.length ? <div className="mt-5 space-y-3">{exams.map(exam => <div key={exam.id} className="rounded-2xl border border-emerald-100 bg-white/80 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-black text-slate-900">{exam.exam_name}</h3><p className="mt-1 text-xs text-slate-500">{fmtDate(exam.exam_date)} • {exam.session || "No session"} • {exam.exam_subjects.length} subjects</p><p className="mt-2 text-xs text-slate-600">{exam.exam_subjects.map(s => s.subject).join(" • ")}</p></div><span className={"rounded-full px-3 py-1 text-[10px] font-black " + (exam.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500")}>{exam.active ? "ACTIVE" : "ARCHIVED"}</span></div>
-            <div className="mt-3 flex flex-wrap gap-2"><button onClick={() => { setSelectedExamId(exam.id); setTab("marks"); setSearch(""); }} disabled={!exam.active} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white disabled:opacity-40">Enter / Edit Results</button><button onClick={() => toggleExamActive(exam)} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black text-slate-700">{exam.active ? <FiToggleRight className="text-emerald-700"/> : <FiToggleLeft/>}{exam.active ? "Archive" : "Activate"}</button></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-black text-slate-900">{exam.exam_name}</h3><p className="mt-1 text-xs text-slate-500">{fmtDate(exam.exam_date)} • {exam.session || "No session"} • {exam.exam_subjects.length} subjects</p><p className="mt-2 text-xs text-slate-600">{exam.exam_subjects.map(s => s.subject).join(" • ")}</p><p className="mt-1 text-[11px] font-bold text-rose-700">{exam.student_exams?.length || 0} linked student result(s)</p></div><span className={"rounded-full px-3 py-1 text-[10px] font-black " + (exam.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500")}>{exam.active ? "ACTIVE" : "ARCHIVED"}</span></div>
+            <div className="mt-3 flex flex-wrap gap-2"><button onClick={() => { setSelectedExamId(exam.id); setTab("marks"); setSearch(""); }} disabled={!exam.active} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white disabled:opacity-40">Enter / Edit Results</button><button onClick={() => toggleExamActive(exam)} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black text-slate-700">{exam.active ? <FiToggleRight className="text-emerald-700"/> : <FiToggleLeft/>}{exam.active ? "Archive" : "Activate"}</button><button onClick={() => void deleteExam(exam)} className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-100"><FiTrash2/> Delete</button></div>
           </div>)}</div> : <div className="mt-5 rounded-2xl bg-white/70 p-8 text-center"><p className="text-3xl">📝</p><p className="mt-2 font-black text-slate-800">No exam created yet</p><p className="mt-1 text-xs text-slate-500">Create your first examination using the form.</p></div>}
         </section>
       </div>}
@@ -256,7 +283,7 @@ export default function AdminResultsPage() {
       {tab === "marks" && <section className="mt-6 space-y-5">
         <div className="admin-glass rounded-3xl p-5 sm:p-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Step 2</p><h2 className="mt-1 text-2xl font-black text-slate-900">Enter Obtained Marks</h2><p className="mt-1 text-sm text-slate-500">Passing marks are applied automatically; yahan sirf obtained marks bharne hain.</p></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Step 2</p><h2 className="mt-1 text-2xl font-black text-slate-900">Enter Obtained Marks</h2><p className="mt-1 text-sm text-slate-500">Har subject mein Present ya Absent chunein. Present par marks bharein; Absent ko zero marks ya Fail nahi maana jayega.</p></div>
             <label className="w-full sm:w-[420px]"><span className="mb-1.5 block text-xs font-black text-slate-700">Select Examination *</span><div className="relative"><select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full appearance-none rounded-xl border border-emerald-100 bg-white px-4 py-3 pr-10 font-bold text-slate-900 outline-none focus:border-emerald-500"><option value="">Choose exam...</option>{exams.filter(e => e.active).map(e => <option key={e.id} value={e.id}>{e.exam_name} • {fmtDate(e.exam_date)} • {e.session || ""}</option>)}</select><FiChevronDown className="pointer-events-none absolute right-4 top-4 text-slate-500"/></div></label>
           </div>
           {selectedExam && <div className="mt-5 flex flex-wrap items-center gap-2">{selectedExam.exam_subjects.map(s => <span key={s.id} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-900">{s.subject} <span className="text-emerald-700/70">(out of {s.full_marks})</span></span>)}</div>}
@@ -265,11 +292,11 @@ export default function AdminResultsPage() {
           <div className="grid gap-4 sm:grid-cols-3"><div className="admin-glass rounded-2xl p-4"><p className="text-xs font-bold text-slate-500">Students</p><p className="mt-1 text-2xl font-black text-slate-900">{students.length}</p></div><div className="admin-glass rounded-2xl p-4"><p className="text-xs font-bold text-slate-500">Marks Entered</p><p className="mt-1 text-2xl font-black text-emerald-700">{enteredCount} / {totalInputs}</p></div><div className="admin-glass rounded-2xl p-4"><p className="text-xs font-bold text-slate-500">Results Already Saved</p><p className="mt-1 text-2xl font-black text-indigo-700">{Object.keys(saved).length}</p></div></div>
           <div className="admin-glass overflow-hidden rounded-3xl">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100/70 p-4 sm:p-5"><div><h3 className="font-black text-slate-900">All Approved Students</h3><p className="mt-1 text-xs text-slate-500">Har student ke saamne har subject ka obtained marks enter karein. Existing saved marks edit ho sakte hain.</p></div><div className="flex w-full flex-wrap gap-2 sm:w-auto"><div className="relative min-w-0 flex-1 sm:w-64"><FiSearch className="absolute left-3 top-3 text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search student..." className="w-full rounded-xl border bg-white py-2.5 pl-9 pr-3 text-sm"/></div><button onClick={toggleAllFiltered} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800">{allFilteredSelected ? "Unselect Visible" : "Select Visible"}</button></div></div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[1050px] border-collapse text-sm"><thead className="bg-emerald-950 text-white"><tr><th className="sticky left-0 bg-emerald-950 p-3 text-left">Select</th><th className="p-3 text-left">Student</th><th className="p-3 text-left">Student ID</th>{selectedExam.exam_subjects.map(s => <th key={s.id} className="min-w-[145px] p-3 text-center">{s.subject}<br/><span className="text-[10px] font-normal text-emerald-200">Full: {s.full_marks}</span></th>)}<th className="p-3">Status</th></tr></thead><tbody>{filteredStudents.map((student, index) => {const marks = values[student.id] || {};const complete = selectedExam.exam_subjects.every(s => (marks[s.id] ?? "").trim() !== "");return <tr key={student.id} className="border-t border-emerald-100/70 odd:bg-white/60 even:bg-emerald-50/50"><td className="sticky left-0 bg-inherit p-3"><input type="checkbox" checked={selectedStudents.includes(student.id)} onChange={() => setSelectedStudents(prev => prev.includes(student.id) ? prev.filter(id => id !== student.id) : [...prev, student.id])} className="h-4 w-4 accent-emerald-700"/></td><td className="p-3"><p className="font-black text-slate-900">{student.student_name}</p><p className="mt-0.5 text-[10px] text-slate-500">{student.course || "Course not specified"}</p></td><td className="p-3 font-bold text-emerald-800">{student.student_id || "—"}</td>{selectedExam.exam_subjects.map(subject => <td key={subject.id} className="p-2"><input type="number" min="0" max={subject.full_marks} step="0.01" inputMode="decimal" value={marks[subject.id] ?? ""} onChange={e => updateMark(student.id, subject.id, e.target.value)} placeholder="Obtained" className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2.5 text-center font-bold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"/></td>)}<td className="p-3 text-center"><span className={"rounded-full px-2.5 py-1 text-[10px] font-black " + (complete ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800")}>{complete ? (saved[student.id] ? "SAVED / READY" : "READY") : "PENDING"}</span></td></tr>})}</tbody></table></div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-100/70 bg-white/70 p-4 sm:p-5"><p className="text-xs font-semibold text-slate-500">All students and all subjects are required before saving. If absent from an exam, enter 0.</p><button onClick={saveResults} disabled={saving || !students.length || enteredCount !== totalInputs} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-6 py-3 font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40"><FiSave/>{saving ? "Saving Results..." : "Save All Students' Results"}</button></div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[1050px] border-collapse text-sm"><thead className="bg-emerald-950 text-white"><tr><th className="sticky left-0 bg-emerald-950 p-3 text-left">Select</th><th className="p-3 text-left">Student</th><th className="p-3 text-left">Student ID</th>{selectedExam.exam_subjects.map(s => <th key={s.id} className="min-w-[145px] p-3 text-center">{s.subject}<br/><span className="text-[10px] font-normal text-emerald-200">Full: {s.full_marks}</span></th>)}<th className="p-3">Status</th></tr></thead><tbody>{filteredStudents.map((student, index) => {const marks = values[student.id] || {};const complete = selectedExam.exam_subjects.every(subject => (attendanceStatus[student.id]?.[subject.id] || "Present") === "Absent" || (marks[subject.id] ?? "").trim() !== "");return <tr key={student.id} className="border-t border-emerald-100/70 odd:bg-white/60 even:bg-emerald-50/50"><td className="sticky left-0 bg-inherit p-3"><input type="checkbox" checked={selectedStudents.includes(student.id)} onChange={() => setSelectedStudents(prev => prev.includes(student.id) ? prev.filter(id => id !== student.id) : [...prev, student.id])} className="h-4 w-4 accent-emerald-700"/></td><td className="p-3"><p className="font-black text-slate-900">{student.student_name}</p><p className="mt-0.5 text-[10px] text-slate-500">{student.course || "Course not specified"}</p></td><td className="p-3 font-bold text-emerald-800">{student.student_id || "—"}</td>{selectedExam.exam_subjects.map(subject => <td key={subject.id} className="p-2"><div className="space-y-1.5"><select value={attendanceStatus[student.id]?.[subject.id] || "Present"} onChange={e => setAttendanceStatus(prev => ({ ...prev, [student.id]: { ...(prev[student.id] || {}), [subject.id]: e.target.value as "Present" | "Absent" } }))} className="w-full rounded-lg border border-emerald-100 bg-white px-2 py-2 text-xs font-black outline-none focus:border-emerald-500"><option value="Present">Present</option><option value="Absent">Absent</option></select>{(attendanceStatus[student.id]?.[subject.id] || "Present") === "Present" ? <input type="number" min="0" max={subject.full_marks} step="0.01" inputMode="decimal" value={marks[subject.id] ?? ""} onChange={e => updateMark(student.id, subject.id, e.target.value)} placeholder="Obtained" className="w-full rounded-lg border border-emerald-100 bg-white px-2 py-2 text-center text-sm font-bold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"/> : <div className="rounded-lg bg-amber-50 px-2 py-2 text-center text-xs font-black text-amber-700">AB · Absent</div>}</div></td>)}<td className="p-3 text-center"><span className={"rounded-full px-2.5 py-1 text-[10px] font-black " + (complete ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800")}>{complete ? (saved[student.id] ? (saved[student.id].result_status || "SAVED") : "READY") : "PENDING"}</span></td></tr>})}</tbody></table></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-100/70 bg-white/70 p-4 sm:p-5"><p className="text-xs font-semibold text-slate-500">All students and subjects need a status. Present students need marks; Absent students are saved as AB and the overall result becomes Incomplete, not Fail.</p><button onClick={saveResults} disabled={saving || !students.length || enteredCount !== totalInputs} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-6 py-3 font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40"><FiSave/>{saving ? "Saving Results..." : "Save All Students' Results"}</button></div>
           </div>
           <div className="admin-glass flex flex-wrap items-center justify-between gap-3 rounded-3xl p-5"><div><h3 className="font-black text-slate-900">Generate Marksheets</h3><p className="mt-1 text-xs text-slate-500">Select students whose marksheets should be printed or downloaded.</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setSelectedStudents(selectedStudents.length === students.length ? [] : students.map(s => s.id))} className="rounded-xl border bg-white px-3 py-2 text-xs font-black">{selectedStudents.length === students.length ? "Unselect All" : "Select All"}</button><button disabled={!selectedResultPairs.length} onClick={() => void printSelected(false)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-40"><FiPrinter/> Print Marksheets</button><button disabled={!selectedResultPairs.length} onClick={() => void printSelected(true)} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white disabled:opacity-40"><FiDownload/> Download PDF</button><button disabled={!saved || Object.keys(saved).length === 0} onClick={() => router.push("/admin/results/notice-board")} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-black text-emerald-800 disabled:opacity-40">Result Notice Board</button></div></div>
-          <div className="admin-glass rounded-2xl p-4 text-xs text-slate-600"><b>Note:</b> Passing marks are not shown in the marks-entry table. System applies each subject's pre-set passing marks automatically and calculates Pass/Fail, grade and percentage for the marksheet.</div>
+          <div className="admin-glass rounded-2xl p-4 text-xs text-slate-600"><b>Note:</b> Passing marks are not shown in the marks-entry table. System applies each subject’s pre-set passing marks. An absent subject is recorded as AB; the student’s overall result stays Incomplete until all subjects are attempted.</div>
         </>}
         {!selectedExam && <div className="admin-glass rounded-3xl p-12 text-center"><p className="text-4xl">📝</p><h3 className="mt-3 text-xl font-black text-slate-900">Select an examination</h3><p className="mt-2 text-sm text-slate-500">Exam Setup tab mein exam create karein, phir yahan select karke obtained marks enter karein.</p><button onClick={() => setTab("setup")} className="mt-5 rounded-xl bg-emerald-700 px-5 py-3 font-black text-white">Go to Exam Setup</button></div>}
       </section>}
