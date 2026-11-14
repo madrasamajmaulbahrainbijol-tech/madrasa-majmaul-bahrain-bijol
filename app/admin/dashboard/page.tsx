@@ -14,7 +14,7 @@ type Stats = {
 
 const initial: Stats = {
   email: "", students: 0, pendingAdmissions: 0, reviewedAdmissions: 0, enquiries: 0,
-  teachers: 0, staff: 0, courses: 0, toppers: 0, notices: [], due: 0, paid: 0,
+  teachers: 0, staff: 0, courses: 0, toppers: 0, notices: [], due: 0, paid: 0, monthCollection: 0,
   studentsWithDue: 0, present: 0, absent: 0, other: 0, attendanceMarked: 0,
 };
 
