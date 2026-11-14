@@ -69,8 +69,9 @@ export default function NoticeBoardPage(){
    if(!examId)return[];
    return selectedExams.map(e=>{
      const s=students.find(x=>x.id===e.admission_id);if(!s)return null;
-     const total=e.student_exam_marks.reduce((a,m)=>a+Number(m.obtained_marks||0),0);
-     const max=e.student_exam_marks.reduce((a,m)=>a+Number(m.max_marks||0),0);
+     const presentMarks=e.student_exam_marks.filter(m=>String(m.attendance_status||"").toLowerCase()!=="absent"&&String(m.result_status||"").toLowerCase()!=="absent");
+     const total=presentMarks.reduce((a,m)=>a+Number(m.obtained_marks||0),0);
+     const max=presentMarks.reduce((a,m)=>a+Number(m.max_marks||0),0);
      const p=pct(total,max);
      const incomplete=e.student_exam_marks.some(m=>String(m.attendance_status||"").toLowerCase()==="absent"||String(m.result_status||"").toLowerCase()==="absent")||String(e.result_status||"").toLowerCase()==="incomplete";
      return{student:s,exam:e,total,max,pct:p,pass:!incomplete&&e.student_exam_marks.length>0&&e.student_exam_marks.every(m=>String(m.result_status||"").toLowerCase()==="pass"),incomplete,rank:0} as Item;
