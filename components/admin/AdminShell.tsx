@@ -38,7 +38,7 @@ const groups: { title: string; items: NavItem[] }[] = [
 export default function AdminShell({ children, email }: { children: ReactNode; email?: string }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   async function logout() {
     const { supabase } = await import("@/lib/supabase/client");
@@ -67,7 +67,7 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
                 {group.items.map((item) => {
                   const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href + "/"));
                   return (
-                    <button key={item.href} onClick={() => { router.push(item.href); setMobileOpen(false); }}
+                    <button key={item.href} onClick={() => { router.push(item.href); setSidebarOpen(false); }}
                       className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold transition ${active ? "bg-white/15 text-white shadow-inner ring-1 ring-white/10" : "text-emerald-50/75 hover:bg-white/10 hover:text-white"}`}>
                       <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-base ${active ? "bg-emerald-400/20 text-emerald-200" : "bg-white/5 text-emerald-100/70 group-hover:bg-white/10"}`}>{item.icon}</span>
                       <span className="flex-1">{item.label}</span>
@@ -91,21 +91,37 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f7f4] text-slate-800">
+    <div className="min-h-screen bg-[#eaf4ef] text-slate-800">
       <style jsx global>{`
-        .admin-glass { background:rgba(255,255,255,.76); border:1px solid rgba(255,255,255,.88); box-shadow:0 12px 36px rgba(15,65,43,.07); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+        .admin-glass { background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(222,245,234,.88)); border:1px solid rgba(255,255,255,.96); box-shadow:0 14px 38px rgba(10,75,48,.10); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
         .sidebar-scroll { scrollbar-width:thin; scrollbar-color:rgba(167,243,208,.25) transparent; }
-        .admin-grid-bg { background-image:radial-gradient(rgba(16,110,70,.10) 1px, transparent 1px); background-size:22px 22px; }
+        .admin-grid-bg { background-color:#eaf4ef; background-image:radial-gradient(rgba(16,110,70,.13) 1px, transparent 1px),linear-gradient(135deg,rgba(219,245,231,.55),rgba(239,244,255,.62)); background-size:22px 22px,100% 100%; }
+        .admin-grid-bg .admin-glass { box-shadow:0 16px 42px rgba(13,78,53,.11); }
       `}</style>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col bg-gradient-to-b from-[#073d2b] via-[#075238] to-[#062f23] shadow-2xl lg:flex"><Sidebar /></aside>
-      {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button aria-label="Close menu" className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} /><aside className="absolute inset-y-0 left-0 flex w-[286px] flex-col bg-gradient-to-b from-[#073d2b] to-[#062f23] shadow-2xl"><div className="flex justify-end px-3 pt-3"><button onClick={() => setMobileOpen(false)} className="rounded-lg bg-white/10 px-3 py-2 text-white">✕</button></div><div className="min-h-0 flex-1"><Sidebar /></div></aside></div>}
-      <div className="min-h-screen lg:pl-[264px]">
-        <header className="admin-glass sticky top-0 z-30 flex h-[70px] items-center justify-between px-4 sm:px-7">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="rounded-xl border border-emerald-100 bg-white/80 px-3 py-2 text-lg text-emerald-900 lg:hidden">☰</button>
-            <div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">MADRASA MANAGEMENT</p><p className="text-sm font-extrabold text-slate-800">Administration Workspace</p></div>
+
+      {sidebarOpen && <div className="fixed inset-0 z-[60]">
+        <button aria-label="Close navigation" className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+        <aside className="absolute inset-y-0 left-0 flex w-[286px] max-w-[88vw] flex-col bg-gradient-to-b from-[#073d2b] via-[#075238] to-[#062f23] shadow-2xl sm:w-[300px]">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <span className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-200">Navigation menu</span>
+            <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation" className="rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/20">✕</button>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-white/70 px-3 py-2 text-xs font-bold text-emerald-900"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,.12)]"/> System Online</div>
+          <div className="min-h-0 flex-1"><Sidebar /></div>
+        </aside>
+      </div>}
+
+      <div className="min-h-screen">
+        <header className="admin-glass sticky top-0 z-40 flex h-[70px] items-center justify-between px-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation menu" aria-expanded={sidebarOpen}
+              className="flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-[5px] rounded-xl border border-emerald-200 bg-gradient-to-br from-white to-emerald-50 text-emerald-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <span className="h-[2px] w-5 rounded-full bg-current" />
+              <span className="h-[2px] w-5 rounded-full bg-current" />
+              <span className="h-[2px] w-5 rounded-full bg-current" />
+            </button>
+            <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">MADRASA MANAGEMENT</p><p className="truncate text-sm font-extrabold text-slate-800">Administration Workspace</p></div>
+          </div>
+          <div className="ml-2 flex shrink-0 items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-[10px] font-bold text-emerald-900 sm:text-xs"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,.12)]"/> System Online</div>
         </header>
         <div className="admin-grid-bg min-h-[calc(100vh-70px)]">{children}</div>
       </div>
