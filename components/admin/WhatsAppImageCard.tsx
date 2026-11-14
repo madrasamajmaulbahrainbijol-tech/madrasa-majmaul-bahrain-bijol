@@ -237,7 +237,7 @@ export default function WhatsAppImageCard(props: Props) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState("");
   const [preview, setPreview] = useState("");
-  const data = useMemo(() => cardData(props), [props]);
+  const data = cardData(props);
 
   useEffect(() => {
     let active = true;
@@ -247,7 +247,7 @@ export default function WhatsAppImageCard(props: Props) {
       if (active) setResult(e?.message || "Card preview load nahi ho saka.");
     });
     return () => { active = false; };
-  }, [props]);
+  }, [props.type, props.studentId, props.studentName, props.guardian, props.mobile, props.amount, props.feeMonth, props.receipt, props.startDate, props.endDate, props.resumeDate, props.reason, props.examName, props.examDate, props.examTime, props.customMessage, props.due, props.message]);
 
   async function createAndShare() {
     setBusy(true);
