@@ -91,20 +91,20 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
   }
 
   return (
-    <div className="min-h-screen bg-[#eaf4ef] text-slate-800">
+    <div className="min-h-screen bg-[#dcecff] text-slate-800">
       <style jsx global>{`
         .admin-glass {
           position: relative;
           isolation: isolate;
           overflow: hidden;
           background:
-            radial-gradient(ellipse at 100% 0%, rgba(167,139,250,.17), transparent 42%),
-            radial-gradient(ellipse at 0% 100%, rgba(45,212,191,.16), transparent 46%),
-            linear-gradient(135deg, rgba(255,255,255,.78), rgba(232,247,255,.63) 48%, rgba(236,253,245,.72));
-          border: 1px solid rgba(255,255,255,.88);
-          box-shadow: 0 18px 48px rgba(15,72,91,.12), 0 5px 16px rgba(91,72,164,.07), inset 0 1px 0 rgba(255,255,255,.9);
-          backdrop-filter: blur(26px) saturate(175%);
-          -webkit-backdrop-filter: blur(26px) saturate(175%);
+            radial-gradient(ellipse at 100% 0%, rgba(167,139,250,.30), transparent 44%),
+            radial-gradient(ellipse at 0% 100%, rgba(45,212,191,.25), transparent 48%),
+            linear-gradient(135deg, rgba(255,255,255,.90), rgba(226,243,255,.82) 48%, rgba(232,255,246,.86));
+          border: 1px solid rgba(255,255,255,.96);
+          box-shadow: 0 20px 54px rgba(15,72,91,.16), 0 8px 24px rgba(91,72,164,.12), inset 0 1px 0 rgba(255,255,255,1);
+          backdrop-filter: blur(30px) saturate(205%);
+          -webkit-backdrop-filter: blur(30px) saturate(205%);
           transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, border-color .28s ease;
         }
         .admin-glass::before {
@@ -113,28 +113,29 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
           z-index: -1;
           pointer-events: none;
           inset: 0;
-          opacity: .75;
-          background: linear-gradient(118deg, rgba(255,255,255,.5), transparent 34%, transparent 68%, rgba(196,181,253,.12));
+          opacity: .9;
+          background: linear-gradient(118deg, rgba(255,255,255,.72), transparent 32%, transparent 62%, rgba(167,139,250,.20));
         }
         .admin-grid-bg {
-          background-color: #eaf4ef;
+          background-color: #dcecff;
           background-image:
-            radial-gradient(ellipse at 8% 8%, rgba(45,212,191,.22), transparent 28%),
-            radial-gradient(ellipse at 92% 12%, rgba(139,92,246,.18), transparent 30%),
-            radial-gradient(ellipse at 78% 88%, rgba(56,189,248,.17), transparent 28%),
-            radial-gradient(ellipse at 18% 78%, rgba(251,191,36,.12), transparent 26%),
-            radial-gradient(rgba(16,110,90,.10) 1px, transparent 1px),
-            linear-gradient(135deg, #e7f8f2, #edf2ff 52%, #e9f8fb);
-          background-size: auto, auto, auto, auto, 24px 24px, 100% 100%;
+            radial-gradient(ellipse at 5% 5%, rgba(20,220,190,.34), transparent 30%),
+            radial-gradient(ellipse at 94% 8%, rgba(139,92,246,.30), transparent 32%),
+            radial-gradient(ellipse at 82% 88%, rgba(14,165,233,.28), transparent 30%),
+            radial-gradient(ellipse at 14% 82%, rgba(251,146,60,.22), transparent 28%),
+            radial-gradient(ellipse at 50% 48%, rgba(236,72,153,.10), transparent 42%),
+            radial-gradient(rgba(49,75,140,.12) 1px, transparent 1px),
+            linear-gradient(125deg, #d9fff4, #e6e7ff 48%, #d9f4ff);
+          background-size: auto, auto, auto, auto, auto, 22px 22px, 100% 100%;
           background-attachment: fixed;
         }
         .admin-grid-bg .admin-glass {
-          box-shadow: 0 20px 54px rgba(13,78,93,.13), 0 6px 20px rgba(109,78,180,.08), inset 0 1px 0 rgba(255,255,255,.92);
+          box-shadow: 0 22px 58px rgba(13,78,93,.17), 0 8px 24px rgba(109,78,180,.13), inset 0 1px 0 rgba(255,255,255,1);
         }
         .admin-grid-bg .admin-glass:hover {
-          transform: translateY(-4px);
-          border-color: rgba(255,255,255,.98);
-          box-shadow: 0 26px 62px rgba(13,78,93,.18), 0 10px 26px rgba(109,78,180,.12), inset 0 1px 0 rgba(255,255,255,1);
+          transform: translateY(-5px);
+          border-color: rgba(255,255,255,1);
+          box-shadow: 0 30px 70px rgba(13,78,93,.22), 0 12px 30px rgba(109,78,180,.18), inset 0 1px 0 rgba(255,255,255,1);
         }
         .sidebar-scroll { scrollbar-width:thin; scrollbar-color:rgba(167,243,208,.25) transparent; }
         @media (prefers-reduced-motion: reduce) {
