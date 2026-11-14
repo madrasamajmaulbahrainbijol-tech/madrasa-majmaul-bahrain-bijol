@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { FiCheckCircle, FiChevronRight, FiMessageCircle, FiXCircle } from "react-icons/fi";
+import WhatsAppImageCard from "@/components/admin/WhatsAppImageCard";
 
 type Student = {
   id: string;
+  student_id?: string | null;
   student_name: string | null;
   guardian_name: string | null;
   mobile: string | null;
@@ -122,7 +124,7 @@ Madrasa Majmaul Bahrain Bijol`;
   const currentMessage = current ? messageFor(current) : "";
 
   const whatsappUrl = (student: Student) => {
-    let digits = String(student.mobile || "").replace(/\\D/g, "");
+    let digits = String(student.mobile || "").replace(/\D/g, "");
     if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
     const phone =
       digits.length === 10
@@ -195,6 +197,25 @@ Madrasa Majmaul Bahrain Bijol`;
             <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
               {currentMessage}
             </div>
+            {current && (
+              <WhatsAppImageCard
+                type={type}
+                studentId={current.student_id || current.id}
+                studentName={current.student_name || "Student"}
+                guardian={current.guardian_name || "Parent/Guardian"}
+                mobile={current.mobile}
+                startDate={startDate}
+                endDate={endDate}
+                resumeDate={resumeDate}
+                reason={reason}
+                examName={examName}
+                examDate={examDate}
+                examTime={examTime}
+                customMessage={customMessage}
+                due={Math.round(dueMap.get(current.id) || 0)}
+                message={currentMessage}
+              />
+            )}
             <div className="grid gap-3 sm:grid-cols-3">
               <button type="button" onClick={openCurrent} className="rounded-xl bg-green-700 px-5 py-3 text-sm font-black text-white hover:bg-green-800">
                 Open WhatsApp
