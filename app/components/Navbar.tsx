@@ -1,11 +1,35 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
 
 export default function Navbar() {
+  const router = useRouter();
+  const logoTaps = useRef(0);
+  const tapWindow = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleLogoTap(event: React.MouseEvent<HTMLAnchorElement>) {
+    logoTaps.current += 1;
+    if (tapWindow.current) clearTimeout(tapWindow.current);
+
+    if (logoTaps.current >= 4) {
+      event.preventDefault();
+      logoTaps.current = 0;
+      router.push("/admin");
+      return;
+    }
+
+    tapWindow.current = setTimeout(() => {
+      logoTaps.current = 0;
+    }, 2200);
+  }
+
   return (
     <header className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-black/90 shadow-lg backdrop-blur-lg">
       <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-8">
         <div className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
-          <Link href="/" className="flex shrink-0 items-center justify-center gap-3 leading-tight lg:justify-start">
+          <Link href="/" onClick={handleLogoTap} aria-label="Madrasa home" className="flex shrink-0 items-center justify-center gap-3 leading-tight lg:justify-start">
             <img src="/mmbb-logo.svg" alt="Madrasa Majmaul Bahrain Bijol official logo" className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow-md sm:h-14 sm:w-14" />
             <span className="text-left">
               <span className="block text-xl font-extrabold text-white sm:text-2xl lg:text-3xl">Madrasa</span>
