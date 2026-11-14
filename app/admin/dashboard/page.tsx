@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
         email: user.email || "", students: studentsQ.count || 0, pendingAdmissions: pendingQ.count || 0,
         reviewedAdmissions: reviewedQ.count || 0, enquiries: enquiriesQ.count || 0,
         teachers: teachersQ.count || 0, staff: staffQ.count || 0, courses: coursesQ.count || 0,
-        toppers: toppersQ.count || 0, notices: noticesQ.data || [], due, paid,
+        toppers: toppersQ.count || 0, notices: noticesQ.data || [], due, paid, monthCollection,
         studentsWithDue: dueStudents.size, present, absent, other, attendanceMarked: statuses.length,
       });
       if (feeQ.error || attendanceQ.error) setLoadError("Kuch financial ya attendance records abhi load nahi ho sake. Baaki dashboard data available hai.");
