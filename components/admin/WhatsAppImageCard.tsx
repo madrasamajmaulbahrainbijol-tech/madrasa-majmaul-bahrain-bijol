@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { FiImage, FiShare2 } from "react-icons/fi";
+import { useEffect, useMemo, useState } from "react";
+import { FiImage, FiShare2, FiDownload, FiCheckCircle } from "react-icons/fi";
 
+type CardType = "fee" | "payment" | "holiday" | "exam" | "general";
 type Row = [string, string];
 
 type Props = {
-  type: "fee" | "payment" | "holiday" | "exam" | "general";
+  type: CardType;
   studentId: string;
   studentName: string;
   guardian: string;
@@ -26,172 +27,208 @@ type Props = {
   message: string;
 };
 
+const PALETTE = {
+  green: "#087443",
+  deep: "#06452d",
+  ink: "#132a22",
+  muted: "#53665e",
+  line: "#dce9e2",
+  pale: "#edf7f1",
+  gold: "#c18a32",
+  white: "#ffffff",
+};
+
 function cardData(p: Props) {
+  const common: Row[] = [["Student", p.studentName || "Student"], ["Guardian", p.guardian || "Parent/Guardian"], ["Student ID", p.studentId || "—"]];
   if (p.type === "fee") return {
-    eyebrow: "FEE PAYMENT REMINDER",
-    title: "Outstanding Fee",
-    value: "₹" + p.due.toLocaleString("en-IN"),
-    accent: "Please clear the outstanding fee at your earliest convenience.",
-    rows: [["Student", p.studentName], ["Guardian", p.guardian], ["Student ID", p.studentId]] as Row[],
-    footer: "Barah-e-karam fee ki adaigi jald se jald kar dein. Agar fee already jama kar di gayi hai, to please is notice ko ignore karein."
+    eyebrow: "FEE PAYMENT REMINDER", title: "Outstanding Fee", value: "₹" + p.due.toLocaleString("en-IN"),
+    valueLabel: "TOTAL OUTSTANDING", accent: "A gentle reminder to clear the pending madrasa fee at your earliest convenience.",
+    rows: common, footer: "Agar fee already jama kar di gayi hai, to please is reminder ko ignore karein. JazakAllahu Khairan.",
+    tag: "PAYMENT REMINDER",
   };
   if (p.type === "payment") return {
-    eyebrow: "PAYMENT CONFIRMATION",
-    title: "Payment Received",
-    value: "₹" + Number(p.amount || 0).toLocaleString("en-IN"),
-    accent: "Thank you for your timely fee payment.",
-    rows: [["Student", p.studentName], ["Fee Month", p.feeMonth || "—"], ["Receipt No.", p.receipt || "—"]] as Row[],
-    footer: "JazakAllahu Khairan for your payment and continued support."
+    eyebrow: "PAYMENT ACKNOWLEDGEMENT", title: "Payment Received", value: "₹" + Number(p.amount || 0).toLocaleString("en-IN"),
+    valueLabel: "AMOUNT RECEIVED", accent: "Your fee payment has been recorded successfully. Thank you for your support.",
+    rows: [["Student", p.studentName || "Student"], ["Fee Month", p.feeMonth || "—"], ["Receipt Number", p.receipt || "—"], ["Guardian", p.guardian || "—"]],
+    footer: "Please keep this acknowledgement for your records. JazakAllahu Khairan.",
+    tag: "PAYMENT CONFIRMATION",
   };
   if (p.type === "holiday") return {
-    eyebrow: "HOLIDAY NOTICE",
-    title: "Madrasa Holiday",
-    value: (p.startDate || "—") + "  —  " + (p.endDate || "—"),
-    accent: p.reason || "Madrasa holiday",
-    rows: [["Student", p.studentName], ["Classes Resume", p.resumeDate || "—"], ["Guardian", p.guardian]] as Row[],
-    footer: "Classes will resume as mentioned above, InshaAllah."
+    eyebrow: "OFFICIAL MADRASA ANNOUNCEMENT", title: "Holiday Notice", value: p.startDate && p.endDate ? p.startDate + " – " + p.endDate : "Holiday Schedule",
+    valueLabel: "HOLIDAY PERIOD", accent: p.reason || "The madrasa will remain closed during the dates mentioned above.",
+    rows: [["Student", p.studentName || "Student"], ["Classes Resume", p.resumeDate || "—"], ["Guardian", p.guardian || "—"]],
+    footer: "Classes will resume on the date mentioned above, InshaAllah. Please take note.",
+    tag: "IMPORTANT UPDATE",
   };
   if (p.type === "exam") return {
-    eyebrow: "EXAMINATION NOTICE",
-    title: p.examName || "Examination",
-    value: p.examDate || "—",
-    accent: p.examTime ? "Reporting / Time: " + p.examTime : "Please arrive on time and be prepared.",
-    rows: [["Student", p.studentName], ["Guardian", p.guardian], ["Student ID", p.studentId]] as Row[],
-    footer: "Please ensure the student arrives on time and is properly prepared."
+    eyebrow: "ACADEMIC ANNOUNCEMENT", title: p.examName || "Examination Notice", value: p.examDate || "Date to be announced",
+    valueLabel: "EXAMINATION DATE", accent: p.examTime ? "Reporting / Examination Time: " + p.examTime : "Please ensure the student arrives on time and is prepared.",
+    rows: [["Student", p.studentName || "Student"], ["Guardian", p.guardian || "—"], ["Student ID", p.studentId || "—"]],
+    footer: "Please ensure punctuality and proper preparation. We wish the student every success.",
+    tag: "EXAMINATION",
   };
   return {
-    eyebrow: "IMPORTANT NOTICE",
-    title: "Madrasa Notice",
-    value: "Please Read",
-    accent: p.customMessage || "Please check the latest madrasa notice.",
-    rows: [["Student", p.studentName], ["Guardian", p.guardian], ["Student ID", p.studentId]] as Row[],
-    footer: p.customMessage || "Please check the latest madrasa notice."
+    eyebrow: "OFFICIAL MADRASA ANNOUNCEMENT", title: "Important Notice", value: "PLEASE READ",
+    valueLabel: "MESSAGE FOR GUARDIANS", accent: p.customMessage || "Please read the important update from the madrasa.",
+    rows: common, footer: "For any clarification, please contact the madrasa office. JazakAllahu Khairan.",
+    tag: "GENERAL NOTICE",
   };
 }
 
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
-  const words = String(text || "").split(/\s+/);
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
-    const test = line ? line + " " + word : word;
-    if (ctx.measureText(test).width <= maxWidth || !line) line = test;
-    else { lines.push(line); line = word; }
+    const next = line ? line + " " + word : word;
+    if (ctx.measureText(next).width <= maxWidth) line = next;
+    else {
+      if (line) lines.push(line);
+      // Break a single long word instead of allowing it to overflow.
+      if (ctx.measureText(word).width > maxWidth) {
+        let part = "";
+        for (const char of word) {
+          if (part && ctx.measureText(part + char).width > maxWidth) { lines.push(part); part = char; }
+          else part += char;
+        }
+        line = part;
+      } else line = word;
+    }
   }
   if (line) lines.push(line);
   return lines;
 }
 
-async function loadLogo() {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.src = "/mmbb-logo.svg";
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("Madrasa logo load nahi ho saka."));
+async function loadLogo(): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = "/mmbb-logo.svg";
   });
-  return img;
 }
 
 async function renderCard(p: Props) {
-  const W = 800, H = 1000;
+  const W = 900, H = 1125, scale = 2;
   const canvas = document.createElement("canvas");
-  canvas.width = W * 2;
-  canvas.height = H * 2;
+  canvas.width = W * scale;
+  canvas.height = H * scale;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas available nahi hai.");
-  ctx.scale(2, 2);
+  if (!ctx) throw new Error("Aapke browser me image canvas support available nahi hai.");
+  ctx.scale(scale, scale);
 
-  ctx.fillStyle = "#ffffff";
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#f7fbf8");
+  bg.addColorStop(1, "#edf5ef");
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.fillStyle = "#047857";
-  ctx.fillRect(0, 0, W, 12);
-
-  ctx.fillStyle = "#ecfdf5";
-  ctx.beginPath(); ctx.arc(760, 50, 150, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#fffbeb";
-  ctx.beginPath(); ctx.arc(35, 890, 125, 0, Math.PI * 2); ctx.fill();
+  // Elegant frame and brand header.
+  ctx.fillStyle = PALETTE.deep;
+  ctx.fillRect(0, 0, W, 18);
+  ctx.fillStyle = PALETTE.gold;
+  ctx.fillRect(0, 18, W, 5);
+  ctx.fillStyle = "#e0eee5";
+  ctx.beginPath(); ctx.arc(850, 65, 170, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#f5ead7";
+  ctx.beginPath(); ctx.arc(35, 1040, 150, 0, Math.PI * 2); ctx.fill();
 
   const logo = await loadLogo();
-  ctx.drawImage(logo, 48, 42, 70, 70);
-
-  ctx.fillStyle = "#047857";
-  ctx.font = "900 16px Arial, sans-serif";
-  ctx.fillText("MADRASA MAJMAUL BAHRAIN", 132, 65);
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "900 24px Arial, sans-serif";
-  ctx.fillText("Bijol", 132, 94);
-
-  ctx.fillStyle = "#ecfdf5";
-  ctx.strokeStyle = "#d1fae5";
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.roundRect(590, 50, 160, 40, 20); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = "#065f46";
-  ctx.font = "900 11px Arial, sans-serif";
-  ctx.fillText("OFFICIAL NOTICE", 616, 75);
-
-  const data = cardData(p);
-  ctx.fillStyle = "#047857";
-  ctx.font = "900 13px Arial, sans-serif";
-  ctx.fillText(data.eyebrow, 48, 175);
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "900 42px Arial, sans-serif";
-  ctx.fillText(data.title, 48, 225);
-
-  ctx.fillStyle = "#ecfdf5";
-  ctx.strokeStyle = "#d1fae5";
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.roundRect(48, 255, 704, 165, 24); ctx.fill(); ctx.stroke();
-
-  ctx.fillStyle = "#047857";
-  ctx.font = "900 11px Arial, sans-serif";
-  ctx.fillText("IMPORTANT", 72, 285);
-  ctx.fillStyle = "#064e3b";
-  ctx.font = "900 34px Arial, sans-serif";
-  ctx.fillText(data.value, 72, 328);
-
-  ctx.fillStyle = "#475569";
-  ctx.font = "600 15px Arial, sans-serif";
-  wrapText(ctx, data.accent, 650).slice(0, 3).forEach((line, i) => ctx.fillText(line, 72, 360 + i * 22));
-
-  let y = 450;
-  for (const [label, value] of data.rows) {
-    ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = "#e2e8f0";
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.roundRect(48, y, 704, 58, 0); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "700 11px Arial, sans-serif";
-    ctx.fillText(label.toUpperCase(), 68, y + 35);
-    ctx.fillStyle = "#1e293b";
-    ctx.font = "900 14px Arial, sans-serif";
-    const valueLines = wrapText(ctx, value, 430).slice(0, 2);
-    valueLines.forEach((line, i) => ctx.fillText(line, 735 - ctx.measureText(line).width, y + 28 + i * 16));
-    y += 58;
+  if (logo) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(94, 100, 52, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(42, 48, 104, 104);
+    ctx.drawImage(logo, 48, 54, 92, 92);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = PALETTE.deep;
+    ctx.beginPath(); ctx.arc(94, 100, 49, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffffff"; ctx.font = "900 25px Arial"; ctx.textAlign = "center";
+    ctx.fillText("MMBB", 94, 109); ctx.textAlign = "left";
   }
 
-  const footerY = Math.max(y + 30, 680);
-  ctx.strokeStyle = "#e2e8f0";
-  ctx.beginPath(); ctx.moveTo(48, footerY); ctx.lineTo(752, footerY); ctx.stroke();
-
-  ctx.fillStyle = "#475569";
+  ctx.fillStyle = PALETTE.deep;
+  ctx.font = "900 21px Arial, sans-serif";
+  ctx.fillText("MADRASA MAJMAUL BAHRAIN", 165, 88);
+  ctx.fillStyle = PALETTE.ink;
+  ctx.font = "900 33px Arial, sans-serif";
+  ctx.fillText("BIJOL", 165, 128);
+  ctx.fillStyle = PALETTE.muted;
   ctx.font = "600 14px Arial, sans-serif";
-  const footerLines = wrapText(ctx, data.footer, 704).slice(0, 4);
-  footerLines.forEach((line, i) => ctx.fillText(line, 48, footerY + 30 + i * 21));
+  ctx.fillText("OFFICIAL GUARDIAN COMMUNICATION", 165, 155);
 
-  ctx.fillStyle = "#047857";
-  ctx.font = "900 13px Arial, sans-serif";
-  ctx.fillText("JazakAllahu Khairan", 48, 910);
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "600 11px Arial, sans-serif";
-  ctx.fillText("For your cooperation and support", 48, 930);
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "900 12px Arial, sans-serif";
-  ctx.fillText("Madrasa Majmaul Bahrain", 570, 910);
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "600 11px Arial, sans-serif";
-  ctx.fillText("Bijol", 705, 930);
+  roundedRect(ctx, 650, 70, 190, 48, 24);
+  ctx.fillStyle = "#ffffff"; ctx.fill();
+  ctx.strokeStyle = "#d5e6db"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = PALETTE.green; ctx.font = "900 12px Arial"; ctx.textAlign = "center";
+  ctx.fillText(cardData(p).tag, 745, 99); ctx.textAlign = "left";
+
+  const data = cardData(p);
+  ctx.fillStyle = PALETTE.green;
+  ctx.font = "900 15px Arial, sans-serif";
+  ctx.fillText(data.eyebrow, 62, 235);
+  ctx.fillStyle = PALETTE.ink;
+  ctx.font = "900 48px Arial, sans-serif";
+  const titleLines = wrapText(ctx, data.title, 770).slice(0, 2);
+  titleLines.forEach((line, i) => ctx.fillText(line, 62, 300 + i * 54));
+
+  const panelY = titleLines.length > 1 ? 405 : 365;
+  roundedRect(ctx, 62, panelY, 776, 205, 28);
+  const panel = ctx.createLinearGradient(62, panelY, 838, panelY + 205);
+  panel.addColorStop(0, "#e6f4eb"); panel.addColorStop(1, "#f5faf6");
+  ctx.fillStyle = panel; ctx.fill();
+  ctx.strokeStyle = "#cfe4d6"; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.fillStyle = PALETTE.green; ctx.font = "900 13px Arial";
+  ctx.fillText(data.valueLabel, 94, panelY + 43);
+  ctx.fillStyle = PALETTE.deep;
+  ctx.font = data.value.length > 22 ? "900 29px Arial" : "900 46px Arial";
+  const valueLines = wrapText(ctx, data.value, 710).slice(0, 2);
+  valueLines.forEach((line, i) => ctx.fillText(line, 94, panelY + 100 + i * 42));
+  ctx.fillStyle = PALETTE.muted; ctx.font = "600 16px Arial";
+  const accentLines = wrapText(ctx, data.accent, 710).slice(0, 3);
+  const accentY = panelY + (valueLines.length > 1 ? 155 : 145);
+  accentLines.forEach((line, i) => ctx.fillText(line, 94, accentY + i * 23));
+
+  let y = panelY + 240;
+  for (const [label, rawValue] of data.rows) {
+    const value = String(rawValue || "—");
+    roundedRect(ctx, 62, y, 776, 68, 12);
+    ctx.fillStyle = "#ffffff"; ctx.fill();
+    ctx.strokeStyle = PALETTE.line; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = "#82948a"; ctx.font = "900 12px Arial";
+    ctx.fillText(label.toUpperCase(), 86, y + 40);
+    ctx.fillStyle = PALETTE.ink; ctx.font = "900 17px Arial";
+    const valueLines = wrapText(ctx, value, 470).slice(0, 2);
+    valueLines.forEach((line, i) => ctx.fillText(line, 810 - ctx.measureText(line).width, y + 30 + i * 20));
+    y += 78;
+  }
+
+  const footerY = Math.min(Math.max(y + 28, 900), 970);
+  ctx.strokeStyle = "#cbded1"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(62, footerY); ctx.lineTo(838, footerY); ctx.stroke();
+  ctx.fillStyle = PALETTE.muted; ctx.font = "600 15px Arial";
+  wrapText(ctx, data.footer, 776).slice(0, 3).forEach((line, i) => ctx.fillText(line, 62, footerY + 32 + i * 23));
+  ctx.fillStyle = PALETTE.green; ctx.font = "900 16px Arial";
+  ctx.fillText("JazakAllahu Khairan", 62, 1065);
+  ctx.fillStyle = "#718279"; ctx.font = "700 12px Arial";
+  ctx.fillText("Madrasa Majmaul Bahrain Bijol", 620, 1065);
+  ctx.fillStyle = PALETTE.gold; ctx.fillRect(62, 1090, 776, 4);
 
   return canvas;
 }
@@ -199,32 +236,48 @@ async function renderCard(p: Props) {
 export default function WhatsAppImageCard(props: Props) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState("");
-  const data = cardData(props);
+  const [preview, setPreview] = useState("");
+  const data = useMemo(() => cardData(props), [props]);
+
+  useEffect(() => {
+    let active = true;
+    renderCard(props).then((canvas) => {
+      if (active) setPreview(canvas.toDataURL("image/png"));
+    }).catch((e) => {
+      if (active) setResult(e?.message || "Card preview load nahi ho saka.");
+    });
+    return () => { active = false; };
+  }, [props]);
 
   async function createAndShare() {
     setBusy(true);
     setResult("");
     try {
       const canvas = await renderCard(props);
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 1));
-      if (!blob) throw new Error("Image generate nahi ho saki.");
-      const safeName = props.studentName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "student";
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("PNG image create nahi ho saki. Browser ko refresh karke dobara try karein.");
+      const safeName = (props.studentName || "student").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "student";
       const file = new File([blob], "MMBB-" + props.type + "-" + safeName + ".png", { type: "image/png" });
       const canShare = typeof navigator !== "undefined" && !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [file] });
       if (canShare) {
-        await navigator.share({ files: [file], title: "Madrasa Majmaul Bahrain Bijol", text: "Madrasa Majmaul Bahrain Bijol" });
-        setResult("Professional card share sheet me ready hai.");
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        setResult("Professional card download ho gaya. WhatsApp me image attach karke Send karein.");
+        try {
+          await navigator.share({ files: [file], title: data.title, text: "Madrasa Majmaul Bahrain Bijol" });
+          setResult("Card share sheet me ready hai. WhatsApp select karke recipient ko bhej dein.");
+          return;
+        } catch (shareError: any) {
+          if (shareError?.name === "AbortError") throw shareError;
+          // If file sharing is unavailable, fall back to a direct PNG download.
+        }
       }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setResult("Professional PNG card download ho gaya. WhatsApp me attach karke Send karein.");
     } catch (e: any) {
       if (e?.name === "AbortError") setResult("Share cancel kiya gaya.");
       else setResult(e?.message || "Professional card generate nahi ho saka.");
@@ -234,20 +287,18 @@ export default function WhatsAppImageCard(props: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-      <div className="flex items-center gap-2 text-emerald-900"><FiImage /><p className="text-sm font-black">Professional WhatsApp Card</p></div>
-      <p className="mt-1 text-xs leading-5 text-emerald-800">Normal text ke bajaye madrasa branding ke saath professional PNG card generate hoga.</p>
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-100 p-3">
-        <div className="mx-auto max-w-[520px] rounded-xl bg-white p-2">
-          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-dashed border-emerald-200 bg-white p-6 text-center">
-            <FiImage className="text-3xl text-emerald-700" />
-            <p className="mt-3 text-sm font-black text-slate-800">{data.title}</p>
-            <p className="mt-1 text-xs text-slate-500">Professional branded PNG preview will be generated.</p>
-          </div>
-        </div>
+    <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-emerald-950"><FiImage className="text-xl" /><div><p className="text-sm font-black">Professional {data.tag} Card</p><p className="text-xs text-emerald-800">Personalized branded PNG · 4:5 format</p></div></div>
+        <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800">MMBB Official</span>
       </div>
-      {result && <p className="mt-3 rounded-xl bg-white p-3 text-xs font-bold text-emerald-800">{result}</p>}
-      <button type="button" onClick={createAndShare} disabled={busy} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-black text-white hover:bg-emerald-800 disabled:opacity-60"><FiShare2 />{busy ? "Card bana raha hoon..." : "Create & Share Professional Card"}</button>
-    </div>
+      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-2">
+        {preview ? <img src={preview} alt={data.title + " card preview"} className="mx-auto block max-h-[520px] w-auto max-w-full rounded-xl object-contain shadow-lg" /> : <div className="flex min-h-48 items-center justify-center text-sm font-bold text-slate-500">Preparing professional card preview…</div>}
+      </div>
+      {result && <p className="mt-3 flex items-start gap-2 rounded-xl bg-white p-3 text-xs font-bold text-emerald-800"><FiCheckCircle className="mt-0.5 shrink-0" />{result}</p>}
+      <button type="button" onClick={createAndShare} disabled={busy} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-5 py-3.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-900 disabled:cursor-wait disabled:opacity-60">
+        {busy ? <FiImage className="animate-pulse" /> : <FiShare2 />} {busy ? "Card taiyar ho raha hai…" : "Create & Share / Download Card"} <FiDownload />
+      </button>
+    </section>
   );
 }
