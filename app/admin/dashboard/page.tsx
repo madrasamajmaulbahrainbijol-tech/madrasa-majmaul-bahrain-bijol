@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
   if (loading) return <div className="flex min-h-[70vh] items-center justify-center"><div className="text-center"><div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-700"/><p className="mt-4 text-sm font-bold text-slate-500">Preparing madrasa overview…</p></div></div>;
 
   return (
-    <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="admin-dashboard mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#06452f] via-[#08734a] to-[#159568] p-6 text-white shadow-xl shadow-emerald-950/10 sm:p-8">
         <div className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full border-[34px] border-white/10"/>
         <div className="pointer-events-none absolute -bottom-28 right-1/3 h-64 w-64 rounded-full bg-emerald-300/10 blur-2xl"/>
